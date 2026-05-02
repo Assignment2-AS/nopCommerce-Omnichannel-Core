@@ -34,7 +34,7 @@ WireMock serves as both the ERP stub (`POST /api/erp/orders`) and the WMS stub (
 The assignment requires demonstrating a surrounding system becoming delayed, stale, or unavailable while the commerce core remains useful. WireMock makes this controllable and repeatable: a single admin API call switches the ERP stub from healthy to degraded and back, on demand, during a live demo. This is what makes the pressure point demonstrable without relying on real infrastructure failures.
 
 **Why not use a real ERP (ERPNext / Odoo)?**  
-A real ERP instance would require significant setup, domain configuration, and operational overhead that does not contribute to the architectural argument. What matters for Scenario C is not the fidelity of the ERP's business logic - it is the *behavior of the commerce core when the ERP is unreachable*. WireMock creates that pressure faithfully while keeping the demo environment reproducible in a single `docker-compose up`.
+A real ERP instance would require significant setup, domain configuration, and operational overhead that does not contribute to the architectural argument. What matters for Scenario C is not the fidelity of the ERP's business logic - it is the *behavior of the commerce core when the ERP is unreachable*. WireMock creates that pressure faithfully while keeping the demo environment reproducible in a single `docker compose up`.
 
 ---
 

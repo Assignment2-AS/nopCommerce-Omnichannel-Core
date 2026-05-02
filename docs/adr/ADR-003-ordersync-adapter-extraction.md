@@ -32,7 +32,7 @@ The integration consumer is extracted as `OrderSyncAdapter`: an independently de
 
 `OrderSyncAdapter` does not have access to the nopCommerce database. Its only coupling to nopCommerce is through the RabbitMQ queue, a deliberate, versioned interface.
 
-Both services are orchestrated locally via `docker-compose`.
+Both services are orchestrated locally via `docker compose`.
 
 ---
 
@@ -46,7 +46,7 @@ Both services are orchestrated locally via `docker-compose`.
 - The extracted service satisfies the assignment requirement for at least one independently deployable subsystem
 
 **Negative / Trade-offs:**
-- Requires docker-compose to orchestrate two services instead of one
+- Requires docker compose to orchestrate two services instead of one
 - Adds a network hop between the two containers (mitigated: local Docker network, negligible latency)
 - Operational surface is slightly larger than a single monolith deployment
 
