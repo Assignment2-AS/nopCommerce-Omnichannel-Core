@@ -74,4 +74,4 @@ Because the outbox write and the order write share a single database transaction
 
 - Related ADR: [ADR-001](ADR-001-async-messaging-rabbitmq.md) - the queue this pattern publishes into
 - Related ADR: [ADR-003](ADR-003-ordersync-adapter-extraction.md) - the consumer that must handle at-least-once delivery
-- Quality attribute scenario: QAS-1 (commerce core availability), QAS-2 (order delivery reliability)
+- Quality attribute scenario: [QAS-1: Order Acceptance under External System Failure](../quality-attribute-scenarios.md#qas-1-order-acceptance-under-external-system-failure), [QAS-2: Message Broker Resilience](../quality-attribute-scenarios.md#qas-2-message-broker-resilience)

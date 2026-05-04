@@ -25,7 +25,7 @@
 
 Without `durable=true` on the queue and `persistent` delivery mode on messages, a RabbitMQ restart drops all queued messages. In the demo, a broker restart during the degradation scenario would silently lose pending orders, making the recovery story impossible to show.
 
-**Validation:** The feasibility spike (Commit 7) explicitly tests durable queue declaration and persistent message delivery. The spike verifies that a message published before a broker restart is still retrievable after recovery.
+**Validation:** The [feasibility spike](../spike/rabbitmq-spike/README.md) explicitly tests durable queue declaration and persistent message delivery. The spike verifies that a message published before a broker restart is still retrievable after recovery. Recorded output: [`spike/rabbitmq-spike/evidence/spike-output.md`](../spike/rabbitmq-spike/evidence/spike-output.md).
 
 ---
 
@@ -57,7 +57,7 @@ If the Outbox background service publishes a message to RabbitMQ and then crashe
 
 If RabbitMQ restarts during the demo (e.g. as part of the degradation scenario), OrderSyncAdapter must automatically reconnect and resume consuming without manual intervention.
 
-**Validation:** The feasibility spike confirms `AutomaticRecoveryEnabled = true` behavior. The recovery demo scenario explicitly restarts the RabbitMQ container and verifies that OrderSyncAdapter resumes without a manual restart.
+**Validation:** The [feasibility spike](../spike/rabbitmq-spike/README.md) confirms `AutomaticRecoveryEnabled = true` behavior. The recovery demo scenario explicitly restarts the RabbitMQ container and verifies that OrderSyncAdapter resumes without a manual restart. Recorded output: [`spike/rabbitmq-spike/evidence/spike-output.md`](../spike/rabbitmq-spike/evidence/spike-output.md).
 
 ---
 
@@ -65,11 +65,11 @@ If RabbitMQ restarts during the demo (e.g. as part of the degradation scenario),
 
 | Risk | Validated By | When |
 |------|-------------|------|
-| R1: Message durability | Feasibility spike | Before Part 1 presentation |
+| R1: Message durability | [Feasibility spike](../spike/rabbitmq-spike/README.md#3-verify-durability-r1-validation) | Before Part 1 presentation |
 | R2: Outbox latency | Latency measurement in evidence pack | Before Part 2 demo |
 | R3: WireMock timeouts | Demo dry run with fault injection | Before Part 2 demo |
 | R4: Duplicate handling | Recovery scenario test | Before Part 2 demo |
-| R5: Auto reconnection | Feasibility spike + recovery scenario | Before Part 1 (basic), Part 2 (full) |
+| R5: Auto reconnection | [Feasibility spike](../spike/rabbitmq-spike/README.md#4-verify-automatic-reconnection-r5-validation) + recovery scenario | Before Part 1 (basic), Part 2 (full) |
 
 ---
 

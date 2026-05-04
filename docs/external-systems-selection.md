@@ -62,7 +62,7 @@ A real ERP instance would require significant setup, domain configuration, and o
 ```
 
 **Communication breakdown:**
-- nopCommerce → RabbitMQ: asynchronous, fire-and-forget from the commerce core's perspective (Outbox Pattern ensures reliability - see ADR-002)
+- nopCommerce → RabbitMQ: asynchronous, fire-and-forget from the commerce core's perspective (Outbox Pattern ensures reliability - see [ADR-002](adr/ADR-002-outbox-pattern.md))
 - RabbitMQ → OrderSyncAdapter: push-based consumer with manual acknowledgement
 - OrderSyncAdapter → WireMock: synchronous HTTP with Polly retry and circuit breaker
 

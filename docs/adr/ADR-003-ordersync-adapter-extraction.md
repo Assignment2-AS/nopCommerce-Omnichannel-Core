@@ -76,4 +76,4 @@ Both services are orchestrated locally via `docker compose`.
 
 - Related ADR: [ADR-001](ADR-001-async-messaging-rabbitmq.md) - the queue OrderSyncAdapter consumes from
 - Related ADR: [ADR-002](ADR-002-outbox-pattern.md) - at-least-once delivery means OrderSyncAdapter must be idempotent
-- Quality attribute scenario: QAS-1 (commerce core availability), QAS-3 (integration boundary isolation)
+- Quality attribute scenario: [QAS-1: Order Acceptance under External System Failure](../quality-attribute-scenarios.md#qas-1-order-acceptance-under-external-system-failure), [QAS-3: Reconciliation and Boundary Isolation after Outage](../quality-attribute-scenarios.md#qas-3-reconciliation-and-boundary-isolation-after-outage)

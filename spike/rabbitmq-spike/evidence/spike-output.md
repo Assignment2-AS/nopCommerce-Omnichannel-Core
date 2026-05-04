@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-04  
 **Environment:** Kali Linux, .NET 9.0.312, RabbitMQ server 3.13.7 (Docker), RabbitMQ.Client 6.8.1 (.NET)  
-**Risks validated:** R1 (message durability), R5 (automatic connection recovery)
+**Risks validated:** R1 (RabbitMQ message durability), R5 (RabbitMQ connection recovery in OrderSyncAdapter)
 
 ---
 

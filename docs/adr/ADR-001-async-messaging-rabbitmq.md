@@ -50,7 +50,7 @@ nopCommerce's responsibility ends at publishing the event. It does not wait for,
 
 **Description:** After saving the order to the database, nopCommerce makes an HTTP POST to the ERP API before returning a response to the customer.
 
-**Reason for rejection:** Creates a synchronous dependency between the checkout critical path and the ERP. Any ERP slowness or outage directly degrades or breaks the customer-facing checkout flow. This directly violates the core quality attribute of the scenario: *the commerce core must remain useful when surrounding systems are delayed or unavailable* (QAS-1).
+**Reason for rejection:** Creates a synchronous dependency between the checkout critical path and the ERP. Any ERP slowness or outage directly degrades or breaks the customer-facing checkout flow. This directly violates the core quality attribute of the scenario: *the commerce core must remain useful when surrounding systems are delayed or unavailable* ([QAS-1](../quality-attribute-scenarios.md#qas-1-order-acceptance-under-external-system-failure)).
 
 ### Alternative B: Outbound webhooks pushed by nopCommerce
 
@@ -64,4 +64,4 @@ nopCommerce's responsibility ends at publishing the event. It does not wait for,
 
 - Related ADR: [ADR-002](ADR-002-outbox-pattern.md) - reliable publishing into this queue
 - Related ADR: [ADR-003](ADR-003-ordersync-adapter-extraction.md) - the service that consumes from this queue
-- Quality attribute scenario: QAS-1 (commerce core availability under surrounding system degradation)
+- Quality attribute scenario: [QAS-1: Order Acceptance under External System Failure](../quality-attribute-scenarios.md#qas-1-order-acceptance-under-external-system-failure)
