@@ -4,8 +4,8 @@
 **Purpose:** Validate that .NET can connect to RabbitMQ, declare a durable queue, and publish a persistent message with publisher confirms before investing in the full plugin implementation.
 
 **Risks validated:**
-- [R1: RabbitMQ message durability](../../docs/risk-plan.md#r1-rabbitmq-message-durability) (durable queue + persistent delivery)
-- [R5: RabbitMQ connection recovery in OrderSyncAdapter](../../docs/risk-plan.md#r5-rabbitmq-connection-recovery-in-ordersyncadapter) (automatic reconnection after broker restart)
+- [R1: RabbitMQ message loss on broker restart](../../docs/risk-and-validation.md#r1-rabbitmq-message-loss-on-broker-restart) (durable queue + persistent delivery)
+- [R4: OrderSyncAdapter loses RabbitMQ connection and does not recover](../../docs/risk-and-validation.md#r4-ordersyncadapter-loses-rabbitmq-connection-and-does-not-recover) (automatic reconnection after broker restart)
 
 ---
 
