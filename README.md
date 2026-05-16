@@ -1,4 +1,4 @@
-﻿﻿# nopCommerce: Omnichannel Commerce Core
+# nopCommerce: Omnichannel Commerce Core
 
 Architectural evolution of [nopCommerce](https://www.nopcommerce.com/) towards an omnichannel platform, developed as part of Assignment 2 for the Software Architecture course.
 
