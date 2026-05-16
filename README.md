@@ -18,11 +18,12 @@ nopCommerce-Omnichannel-Core/
 │   │   ├── README.md                                   # ADR index
 │   │   └── template.md                                 # Template for ADR's
 │   ├── add-framework.md                                # ADD framework application
+│   ├── Domain Model & Bounded Contexts.jpg             # Domain model and bounded context diagram
 │   ├── external-systems-selection.md                   # Rationale for external system choices
 │   ├── quality-attribute-scenarios.md                  # Quality attribute scenarios (QAS)
 │   ├── risk-and-validation.md                          # Identified risks and validation strategies
 │   ├── scenario-and-business-drivers.md                # Business context and key drivers
-│   └── Target Architecture.jpg                         # Target Architecture Diagram
+│   └── Target Architecture.jpg                         # Target architecture diagram
 ├── infrastructure/
 │   └── docker-compose.yml                              # Docker Compose for supporting services
 ├── spike/                                              
@@ -56,11 +57,13 @@ All written documentation lives in the [`docs/`](docs/) folder:
 | Document | Description |
 |---|---|
 | [docs/adr/](docs/adr/) | Architecture Decision Records index |
-| [add-framework.md](docs/add-framework.md) | ADD (Attribute-Driven Design) framework application |
-| [external-systems-selection.md](docs/external-systems-selection.md) | Rationale for external system choices |
-| [quality-attribute-scenarios.md](docs/quality-attribute-scenarios.md) | Quality attribute scenarios (QAS) |
-| [risk-and-validation.md](docs/risk-and-validation.md) | Identified risks and validation strategies |
+| [add-framework.md](docs/add-framework.md) | ADD (Attribute-Driven Design) framework application and traceability |
+| [Domain Model & Bounded Contexts.jpg](docs/Domain%20Model%20%26%20Bounded%20Contexts.jpg) | Domain model and bounded context diagram |
+| [external-systems-selection.md](docs/external-systems-selection.md) | Rationale for external system choices (RabbitMQ, WireMock) |
+| [quality-attribute-scenarios.md](docs/quality-attribute-scenarios.md) | Quality attribute scenarios (QAS-1 to QAS-5) |
+| [risk-and-validation.md](docs/risk-and-validation.md) | Identified risks (R1–R6) and validation strategies |
 | [scenario-and-business-drivers.md](docs/scenario-and-business-drivers.md) | Business context, scenario description, and key drivers |
+| [Target Architecture.jpg](docs/Target%20Architecture.jpg) | Target architecture diagram |
 
 ### Architecture Decision Records
 
