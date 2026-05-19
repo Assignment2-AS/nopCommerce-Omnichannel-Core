@@ -1,0 +1,33 @@
+services:
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: verdemart-rabbitmq
+    ports:
+      - "5672:5672"   # AMQP
+      - "15672:15672" # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  wiremock:
+    image: wiremock/wiremock:3.3.1
+    container_name: verdemart-wiremock
+    ports:
+      - "8080:8080"   # HTTP (ERP + WMS stubs + Admin API)
+    volumes:
+      - ./wiremock/mappings:/home/wiremock/mappings
+    command: --verbose --global-response-templating
+    restart: unless-stopped
+
+volumes:
+  rabbitmq-data:
+    driver: local
