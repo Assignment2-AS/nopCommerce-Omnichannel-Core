@@ -1,0 +1,17 @@
+{
+  "name": "ERP - Accept order (normal)",
+  "request": {
+    "method": "POST",
+    "url": "/api/orders"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "status": "received",
+      "message": "Order accepted by ERP and queued for processing"
+    }
+  }
+}

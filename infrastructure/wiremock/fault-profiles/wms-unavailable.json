@@ -1,0 +1,19 @@
+{
+  "id": "f1000001-0000-0000-0000-000000000000",
+  "name": "WMS - Unavailable (fault injection — activate via script)",
+  "priority": 1,
+  "request": {
+    "method": "GET",
+    "urlPathPattern": "/api/stock/([^/]+)"
+  },
+  "response": {
+    "status": 503,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "error": "Service Unavailable",
+      "message": "WMS is temporarily unavailable"
+    }
+  }
+}
