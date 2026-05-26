@@ -18,6 +18,7 @@ services:
       retries: 5
     restart: unless-stopped
 
+<<<<<<< architect
   wiremock:
     image: wiremock/wiremock:3.3.1
     container_name: verdemart-wiremock
@@ -28,6 +29,8 @@ services:
     command: --verbose --global-response-templating
     restart: unless-stopped
 
+=======
+>>>>>>> develop
 volumes:
   rabbitmq-data:
     driver: local
