@@ -8,6 +8,8 @@ public sealed class OrderSyncResult
 
     public bool IsTimeout { get; init; }
 
+    public bool IsStaleFallback { get; init; }
+
     public string Message { get; init; } = string.Empty;
 
     public static OrderSyncResult Success(int statusCode, string message = "Order synchronized successfully.") =>
@@ -24,6 +26,15 @@ public sealed class OrderSyncResult
             IsSuccess = false,
             StatusCode = statusCode,
             IsTimeout = isTimeout,
+            Message = message
+        };
+
+    public static OrderSyncResult StaleFallback(int? statusCode, string message) =>
+        new()
+        {
+            IsSuccess = true,
+            StatusCode = statusCode,
+            IsStaleFallback = true,
             Message = message
         };
 }

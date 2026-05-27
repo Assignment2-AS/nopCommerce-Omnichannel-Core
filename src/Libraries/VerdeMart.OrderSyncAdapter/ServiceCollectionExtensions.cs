@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Polly;
 using Polly.Extensions.Http;
 using VerdeMart.OrderSyncAdapter.Implementation;
+using VerdeMart.OrderSyncAdapter.Infrastructure;
 
 namespace VerdeMart.OrderSyncAdapter;
 
@@ -22,6 +23,14 @@ public static class ServiceCollectionExtensions
         }
 
         var baseUri = new Uri(erpBaseUrl, UriKind.Absolute);
+        var retryIntervals = new[]
+        {
+            TimeSpan.FromSeconds(1),
+            TimeSpan.FromSeconds(2),
+            TimeSpan.FromSeconds(4)
+        };
+        var wmsCircuitBreakerStateTracker = new WmsCircuitBreakerStateTracker();
+        services.AddSingleton(wmsCircuitBreakerStateTracker);
 
         services.AddHttpClient(WireMockClientName, client =>
             {
@@ -29,7 +38,7 @@ public static class ServiceCollectionExtensions
                 client.Timeout = TimeSpan.FromSeconds(5);
             })
             // Retry para suportar falhas transitórias sem expor a instabilidade ao domínio.
-            .AddPolicyHandler(GetRetryPolicy())
+            .AddPolicyHandler(GetRetryPolicy(retryIntervals))
             // Circuit Breaker para proteger o sistema quando o ERP estiver indisponível por vários erros seguidos.
             .AddPolicyHandler(GetCircuitBreakerPolicy());
 
@@ -39,22 +48,20 @@ public static class ServiceCollectionExtensions
                 client.Timeout = TimeSpan.FromSeconds(5);
             })
             // Mesma política de retry para o WMS, mantendo consistência de resiliência.
-            .AddPolicyHandler(GetRetryPolicy())
+            .AddPolicyHandler(GetRetryPolicy(retryIntervals))
             // O circuito separado evita que a falha do WMS degrade o ERP por arrastamento.
-            .AddPolicyHandler(GetCircuitBreakerPolicy());
+            .AddPolicyHandler(GetCircuitBreakerPolicy(wmsCircuitBreakerStateTracker));
 
         services.AddScoped<IOrderSyncAdapter, WireMockOrderSyncAdapter>();
 
         return services;
     }
 
-    private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
+    private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy(TimeSpan[] retryIntervals)
     {
         return HttpPolicyExtensions
             .HandleTransientHttpError()
-            .WaitAndRetryAsync(
-                retryCount: 3,
-                sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+            .WaitAndRetryAsync(retryIntervals);
     }
 
     private static IAsyncPolicy<HttpResponseMessage> GetCircuitBreakerPolicy()
@@ -64,5 +71,17 @@ public static class ServiceCollectionExtensions
             .CircuitBreakerAsync(
                 handledEventsAllowedBeforeBreaking: 5,
                 durationOfBreak: TimeSpan.FromSeconds(30));
+    }
+
+    private static IAsyncPolicy<HttpResponseMessage> GetCircuitBreakerPolicy(WmsCircuitBreakerStateTracker stateTracker)
+    {
+        return HttpPolicyExtensions
+            .HandleTransientHttpError()
+            .CircuitBreakerAsync(
+                handledEventsAllowedBeforeBreaking: 5,
+                durationOfBreak: TimeSpan.FromSeconds(30),
+                onBreak: (_, _, _) => stateTracker.MarkOpened(),
+                onReset: _ => stateTracker.MarkClosed(),
+                onHalfOpen: () => stateTracker.MarkHalfOpen());
     }
 }

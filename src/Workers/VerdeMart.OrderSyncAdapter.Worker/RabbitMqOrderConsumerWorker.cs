@@ -10,12 +10,12 @@ using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using VerdeMart.OrderSyncAdapter.Models;
+using VerdeMart.OrderSyncAdapter.Worker.Infrastructure;
 
 namespace VerdeMart.OrderSyncAdapter.Worker;
 
 public sealed class RabbitMqOrderConsumerWorker : BackgroundService
 {
-    private const string QueueName = "order.placed";
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IConfiguration _configuration;
     private readonly ILogger<RabbitMqOrderConsumerWorker> _logger;
@@ -49,13 +49,7 @@ public sealed class RabbitMqOrderConsumerWorker : BackgroundService
         await using var connection = await factory.CreateConnectionAsync(stoppingToken);
         await using var channel = await connection.CreateChannelAsync(new CreateChannelOptions(false, false, null, null), stoppingToken);
 
-        await channel.QueueDeclareAsync(
-            queue: QueueName,
-            durable: true,
-            exclusive: false,
-            autoDelete: false,
-            arguments: null,
-            cancellationToken: stoppingToken);
+        await RabbitMqTopology.EnsureAsync(channel, stoppingToken);
 
         await channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 1, global: false, cancellationToken: stoppingToken);
 
@@ -73,8 +67,8 @@ public sealed class RabbitMqOrderConsumerWorker : BackgroundService
 
                 if (orderPayload is null)
                 {
-                    _logger.LogError("Mensagem inválida recebida na fila {QueueName}.", QueueName);
-                    await channel.BasicNackAsync(eventArgs.DeliveryTag, multiple: false, requeue: true, cancellationToken: stoppingToken);
+                    _logger.LogError("Mensagem inválida recebida na fila {QueueName}.", RabbitMqTopology.OrderQueueName);
+                    await channel.BasicNackAsync(eventArgs.DeliveryTag, multiple: false, requeue: false, cancellationToken: stoppingToken);
                     return;
                 }
 
@@ -83,7 +77,7 @@ public sealed class RabbitMqOrderConsumerWorker : BackgroundService
                 using var scope = _scopeFactory.CreateScope();
                 var orderSyncAdapter = scope.ServiceProvider.GetRequiredService<IOrderSyncAdapter>();
 
-                _logger.LogInformation("A processar encomenda {OrderId} da fila {QueueName}.", orderPayload.OrderId, QueueName);
+                _logger.LogInformation("A processar encomenda {OrderId} da fila {QueueName}.", orderPayload.OrderId, RabbitMqTopology.OrderQueueName);
 
                 var result = await orderSyncAdapter.SyncOrderAsync(orderPayload, stoppingToken);
 
@@ -95,27 +89,27 @@ public sealed class RabbitMqOrderConsumerWorker : BackgroundService
                 }
 
                 _logger.LogError(
-                    "Falha ao sincronizar a encomenda {OrderId}. Message: {Message}. Nack com requeue.",
+                    "Falha ao sincronizar a encomenda {OrderId}. Message: {Message}. Envio para DLQ.",
                     orderPayload.OrderId,
                     result.Message);
 
-                // Nack com requeue garante at-least-once delivery e evita perda da mensagem.
-                await channel.BasicNackAsync(eventArgs.DeliveryTag, multiple: false, requeue: true, cancellationToken: stoppingToken);
+                // Nack sem requeue envia a mensagem para a DLQ quando a sincronizacao falha definitivamente.
+                await channel.BasicNackAsync(eventArgs.DeliveryTag, multiple: false, requeue: false, cancellationToken: stoppingToken);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Erro inesperado ao processar a mensagem da fila {QueueName} para OrderId {OrderId}.", QueueName, orderId);
-                await channel.BasicNackAsync(eventArgs.DeliveryTag, multiple: false, requeue: true, cancellationToken: stoppingToken);
+                _logger.LogError(ex, "Erro inesperado ao processar a mensagem da fila {QueueName} para OrderId {OrderId}.", RabbitMqTopology.OrderQueueName, orderId);
+                await channel.BasicNackAsync(eventArgs.DeliveryTag, multiple: false, requeue: false, cancellationToken: stoppingToken);
             }
         };
 
         await channel.BasicConsumeAsync(
-            queue: QueueName,
+            queue: RabbitMqTopology.OrderQueueName,
             autoAck: false,
             consumer: consumer,
             cancellationToken: stoppingToken);
 
-        _logger.LogInformation("Worker RabbitMQ iniciado e à escuta da fila {QueueName}.", QueueName);
+        _logger.LogInformation("Worker RabbitMQ iniciado e à escuta da fila {QueueName}.", RabbitMqTopology.OrderQueueName);
 
         try
         {

@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Polly.CircuitBreaker;
 using VerdeMart.OrderSyncAdapter.Models;
 
 namespace VerdeMart.OrderSyncAdapter.Implementation;
@@ -16,6 +18,7 @@ public sealed class WireMockOrderSyncAdapter : IOrderSyncAdapter
     private const string WmsClientName = "WireMockWms";
     private const string EndpointPath = "api/orders";
     private const string WmsEndpointPath = "api/wms/orders";
+    private static readonly ConcurrentDictionary<int, string> WmsResponseCache = new();
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<WireMockOrderSyncAdapter> _logger;
@@ -42,8 +45,8 @@ public sealed class WireMockOrderSyncAdapter : IOrderSyncAdapter
 
         _logger.LogInformation("A iniciar sincronizacao da encomenda com ERP e WMS via WireMock.");
 
-        var erpTask = SendToSystemAsync(ClientName, EndpointPath, "ERP", json, cancellationToken);
-        var wmsTask = SendToSystemAsync(WmsClientName, WmsEndpointPath, "WMS", json, cancellationToken);
+        var erpTask = SendToSystemAsync(ClientName, EndpointPath, "ERP", order.OrderId, json, cancellationToken);
+        var wmsTask = SendToSystemAsync(WmsClientName, WmsEndpointPath, "WMS", order.OrderId, json, cancellationToken);
 
         var results = await Task.WhenAll(erpTask, wmsTask);
 
@@ -72,6 +75,7 @@ public sealed class WireMockOrderSyncAdapter : IOrderSyncAdapter
         string clientName,
         string endpointPath,
         string systemName,
+        int orderId,
         string json,
         CancellationToken cancellationToken)
     {
@@ -89,6 +93,12 @@ public sealed class WireMockOrderSyncAdapter : IOrderSyncAdapter
 
             if (response.IsSuccessStatusCode)
             {
+                if (systemName == "WMS")
+                {
+                    var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                    WmsResponseCache[orderId] = responseBody;
+                }
+
                 _logger.LogInformation("Sincronizacao concluida com sucesso no {SystemName}. StatusCode: {StatusCode}", systemName, (int)response.StatusCode);
                 return OrderSyncResult.Success((int)response.StatusCode);
             }
@@ -118,6 +128,25 @@ public sealed class WireMockOrderSyncAdapter : IOrderSyncAdapter
             return OrderSyncResult.Failure(
                 null,
                 $"HTTP error while calling {systemName} endpoint.");
+        }
+        catch (BrokenCircuitException)
+        {
+            if (systemName != "WMS")
+            {
+                throw;
+            }
+
+            WmsResponseCache.TryGetValue(orderId, out var cachedBody);
+
+            _logger.LogWarning(
+                "Circuit breaker aberto para WMS. A devolver conteudo stale em cache para OrderId {OrderId}.",
+                orderId);
+
+            return OrderSyncResult.StaleFallback(
+                200,
+                string.IsNullOrWhiteSpace(cachedBody)
+                    ? $"WMS circuit open. Using stale cached response for OrderId {orderId}."
+                    : $"WMS circuit open. Using stale cached response for OrderId {orderId}: {cachedBody}");
         }
     }
 
