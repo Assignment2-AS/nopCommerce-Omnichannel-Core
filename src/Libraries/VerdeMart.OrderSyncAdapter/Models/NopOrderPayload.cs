@@ -5,9 +5,9 @@ namespace VerdeMart.OrderSyncAdapter.Models;
 
 public sealed class NopOrderPayload
 {
-    public string OrderId { get; init; } = string.Empty;
+    public int OrderId { get; init; }
 
-    public string CustomerId { get; init; } = string.Empty;
+    public int CustomerId { get; init; }
 
     public string CurrencyCode { get; init; } = string.Empty;
 

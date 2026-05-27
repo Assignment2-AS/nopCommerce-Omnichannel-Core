@@ -123,8 +123,8 @@ public sealed class WireMockOrderSyncAdapterTests
     private static NopOrderPayload BuildOrder() =>
         new()
         {
-            OrderId = "ORDER-123",
-            CustomerId = "CUST-01",
+            OrderId = 123,
+            CustomerId = 456,
             CurrencyCode = "EUR",
             TotalAmount = 199.99m,
             CreatedAtUtc = DateTime.UtcNow,

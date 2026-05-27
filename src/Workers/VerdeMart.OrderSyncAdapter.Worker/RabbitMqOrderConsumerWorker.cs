@@ -62,7 +62,7 @@ public sealed class RabbitMqOrderConsumerWorker : BackgroundService
         var consumer = new AsyncEventingBasicConsumer(channel);
         consumer.ReceivedAsync += async (_, eventArgs) =>
         {
-            var orderId = string.Empty;
+            int? orderId = null;
             try
             {
                 var payloadJson = Encoding.UTF8.GetString(eventArgs.Body.ToArray());

@@ -13,7 +13,7 @@ namespace VerdeMart.OrderSyncAdapter.Implementation;
 public sealed class WireMockOrderSyncAdapter : IOrderSyncAdapter
 {
     private const string ClientName = "WireMockErp";
-    private const string EndpointPath = "api/orders/sync";
+    private const string EndpointPath = "api/orders";
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<WireMockOrderSyncAdapter> _logger;
