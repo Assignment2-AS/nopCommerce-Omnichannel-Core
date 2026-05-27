@@ -10,6 +10,7 @@ namespace VerdeMart.OrderSyncAdapter;
 public static class ServiceCollectionExtensions
 {
     private const string WireMockClientName = "WireMockErp";
+    private const string WireMockWmsClientName = "WireMockWms";
 
     public static IServiceCollection AddOrderSyncAdapter(this IServiceCollection services, string erpBaseUrl)
     {
@@ -30,6 +31,16 @@ public static class ServiceCollectionExtensions
             // Retry para suportar falhas transitórias sem expor a instabilidade ao domínio.
             .AddPolicyHandler(GetRetryPolicy())
             // Circuit Breaker para proteger o sistema quando o ERP estiver indisponível por vários erros seguidos.
+            .AddPolicyHandler(GetCircuitBreakerPolicy());
+
+        services.AddHttpClient(WireMockWmsClientName, client =>
+            {
+                client.BaseAddress = baseUri;
+                client.Timeout = TimeSpan.FromSeconds(5);
+            })
+            // Mesma política de retry para o WMS, mantendo consistência de resiliência.
+            .AddPolicyHandler(GetRetryPolicy())
+            // O circuito separado evita que a falha do WMS degrade o ERP por arrastamento.
             .AddPolicyHandler(GetCircuitBreakerPolicy());
 
         services.AddScoped<IOrderSyncAdapter, WireMockOrderSyncAdapter>();

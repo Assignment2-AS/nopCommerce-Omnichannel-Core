@@ -13,7 +13,9 @@ namespace VerdeMart.OrderSyncAdapter.Implementation;
 public sealed class WireMockOrderSyncAdapter : IOrderSyncAdapter
 {
     private const string ClientName = "WireMockErp";
+    private const string WmsClientName = "WireMockWms";
     private const string EndpointPath = "api/orders";
+    private const string WmsEndpointPath = "api/wms/orders";
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<WireMockOrderSyncAdapter> _logger;
@@ -36,12 +38,46 @@ public sealed class WireMockOrderSyncAdapter : IOrderSyncAdapter
             ["OrderId"] = order.OrderId
         });
 
-        _logger.LogInformation("A iniciar sincronizacao da encomenda com ERP via WireMock.");
-
-        var client = _httpClientFactory.CreateClient(ClientName);
         var json = JsonSerializer.Serialize(order);
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, EndpointPath)
+        _logger.LogInformation("A iniciar sincronizacao da encomenda com ERP e WMS via WireMock.");
+
+        var erpTask = SendToSystemAsync(ClientName, EndpointPath, "ERP", json, cancellationToken);
+        var wmsTask = SendToSystemAsync(WmsClientName, WmsEndpointPath, "WMS", json, cancellationToken);
+
+        var results = await Task.WhenAll(erpTask, wmsTask);
+
+        var erpResult = results[0];
+        var wmsResult = results[1];
+
+        if (erpResult.IsSuccess && wmsResult.IsSuccess)
+        {
+            _logger.LogInformation("Encomenda sincronizada com sucesso no ERP e no WMS.");
+            return OrderSyncResult.Success(200, "Order synchronized successfully in ERP and WMS.");
+        }
+
+        var statusCode = erpResult.StatusCode ?? wmsResult.StatusCode;
+        var message = BuildFailureMessage(erpResult, wmsResult);
+        var isTimeout = erpResult.IsTimeout || wmsResult.IsTimeout;
+
+        _logger.LogError(
+            "Sincronizacao incompleta. ERP sucesso: {ErpSuccess}; WMS sucesso: {WmsSuccess}.",
+            erpResult.IsSuccess,
+            wmsResult.IsSuccess);
+
+        return OrderSyncResult.Failure(statusCode, message, isTimeout);
+    }
+
+    private async Task<OrderSyncResult> SendToSystemAsync(
+        string clientName,
+        string endpointPath,
+        string systemName,
+        string json,
+        CancellationToken cancellationToken)
+    {
+        var client = _httpClientFactory.CreateClient(clientName);
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, endpointPath)
         {
             Content = new StringContent(json, Encoding.UTF8, "application/json")
         };
@@ -53,34 +89,52 @@ public sealed class WireMockOrderSyncAdapter : IOrderSyncAdapter
 
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogInformation("Sincronizacao concluida com sucesso. StatusCode: {StatusCode}", (int)response.StatusCode);
+                _logger.LogInformation("Sincronizacao concluida com sucesso no {SystemName}. StatusCode: {StatusCode}", systemName, (int)response.StatusCode);
                 return OrderSyncResult.Success((int)response.StatusCode);
             }
 
             var body = await response.Content.ReadAsStringAsync(cancellationToken);
             _logger.LogError(
-                "Falha de sincronizacao com ERP. StatusCode: {StatusCode}; Body: {Body}",
+                "Falha de sincronizacao com {SystemName}. StatusCode: {StatusCode}; Body: {Body}",
+                systemName,
                 (int)response.StatusCode,
                 body);
 
             return OrderSyncResult.Failure(
                 (int)response.StatusCode,
-                $"ERP returned a non-success status code: {(int)response.StatusCode}.");
+                $"{systemName} returned a non-success status code: {(int)response.StatusCode}.");
         }
         catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
         {
-            _logger.LogError(ex, "Timeout ao comunicar com o ERP simulado (WireMock).");
+            _logger.LogError(ex, "Timeout ao comunicar com o {SystemName} simulado (WireMock).", systemName);
             return OrderSyncResult.Failure(
                 null,
-                "Timeout while calling ERP endpoint.",
+                $"Timeout while calling {systemName} endpoint.",
                 isTimeout: true);
         }
         catch (HttpRequestException ex)
         {
-            _logger.LogError(ex, "Erro de transporte HTTP ao comunicar com o ERP simulado (WireMock).");
+            _logger.LogError(ex, "Erro de transporte HTTP ao comunicar com o {SystemName} simulado (WireMock).", systemName);
             return OrderSyncResult.Failure(
                 null,
-                "HTTP error while calling ERP endpoint.");
+                $"HTTP error while calling {systemName} endpoint.");
         }
+    }
+
+    private static string BuildFailureMessage(OrderSyncResult erpResult, OrderSyncResult wmsResult)
+    {
+        var failures = new List<string>();
+
+        if (!erpResult.IsSuccess)
+        {
+            failures.Add($"ERP: {erpResult.Message}");
+        }
+
+        if (!wmsResult.IsSuccess)
+        {
+            failures.Add($"WMS: {wmsResult.Message}");
+        }
+
+        return string.Join(" | ", failures);
     }
 }
