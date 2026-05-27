@@ -2,7 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <OutputPath>$(SolutionDir)\Presentation\Nop.Web\Plugins\Integration.OrderPublisher</OutputPath>
+    <OutputPath Condition="'$(SolutionDir)'!=''">$(SolutionDir)\Presentation\Nop.Web\Plugins\Integration.OrderPublisher</OutputPath>
+    <OutputPath Condition="'$(SolutionDir)'==''">$(MSBuildProjectDirectory)\..\..\Presentation\Nop.Web\Plugins\Integration.OrderPublisher</OutputPath>
     <OutDir>$(OutputPath)</OutDir>
     <!--Set to true because this plugin will reference RabbitMQ.Client NuGet package-->
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
@@ -10,16 +11,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="logo.png" />
     <None Remove="plugin.json" />
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="logo.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="plugin.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="RabbitMQ.Client" Version="6.8.1" />
     <ProjectReference Include="..\..\Presentation\Nop.Web.Framework\Nop.Web.Framework.csproj" />
     <ClearPluginAssemblies Include="$(SolutionDir)\Build\ClearPluginAssemblies.proj" />
   </ItemGroup>
