@@ -1,0 +1,20 @@
+{
+  "id": "f1000002-0000-0000-0000-000000000000",
+  "name": "WMS - Degraded / slow response (fault injection — activate via script)",
+  "priority": 1,
+  "request": {
+    "method": "GET",
+    "urlPathPattern": "/api/stock/([^/]+)"
+  },
+  "response": {
+    "status": 503,
+    "fixedDelayMilliseconds": 10000,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "error": "Gateway Timeout",
+      "message": "WMS response timed out after 10s delay"
+    }
+  }
+}

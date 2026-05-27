@@ -1,0 +1,23 @@
+{
+  "name": "WMS - Stock query (normal)",
+  "request": {
+    "method": "GET",
+    "urlPathPattern": "/api/stock/([^/]+)"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "productId": "{{request.pathSegments.[2]}}",
+      "warehouseId": "WH-001",
+      "quantity": 100,
+      "reservedQuantity": 5,
+      "availableQuantity": 95,
+      "status": "IN_STOCK",
+      "lastSyncAt": "2026-05-18T09:00:00Z"
+    },
+    "transformers": ["response-template"]
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "Group": "Integration",
+  "FriendlyName": "Order Publisher (VerdeMart Omnichannel)",
+  "SystemName": "Integration.OrderPublisher",
+  "Version": "1.0.0",
+  "SupportedVersions": [ "5.00" ],
+  "Author": "VerdeMart Team",
+  "DisplayOrder": 1,
+  "FileName": "Nop.Plugin.Integration.OrderPublisher.dll",
+  "Description": "Publishes order events to RabbitMQ via the Outbox Pattern for omnichannel ERP/WMS integration."
+}
