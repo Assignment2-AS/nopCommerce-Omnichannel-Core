@@ -1,6 +1,6 @@
 {
   "id": "f1000002-0000-0000-0000-000000000000",
-  "name": "WMS - Degraded / slow order sync (fault injection — activate via script)",
+  "name": "WMS - Degraded / slow order sync",
   "priority": 1,
   "request": {
     "method": "POST",
