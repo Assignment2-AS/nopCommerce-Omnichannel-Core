@@ -1,10 +1,10 @@
 {
   "id": "f1000001-0000-0000-0000-000000000000",
-  "name": "WMS - Unavailable (fault injection — activate via script)",
+  "name": "WMS - Unavailable order sync (fault injection — activate via script)",
   "priority": 1,
   "request": {
-    "method": "GET",
-    "urlPathPattern": "/api/stock/([^/]+)"
+    "method": "POST",
+    "url": "/api/wms/orders"
   },
   "response": {
     "status": 503,
@@ -13,7 +13,7 @@
     },
     "jsonBody": {
       "error": "Service Unavailable",
-      "message": "WMS is temporarily unavailable"
+      "message": "WMS order sync is temporarily unavailable"
     }
   }
 }

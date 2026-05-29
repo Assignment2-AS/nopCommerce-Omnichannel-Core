@@ -61,6 +61,8 @@ public static class ServiceCollectionExtensions
     {
         return HttpPolicyExtensions
             .HandleTransientHttpError()
+            .Or<TaskCanceledException>()
+            .Or<TimeoutException>()
             .WaitAndRetryAsync(retryIntervals);
     }
 
@@ -68,6 +70,8 @@ public static class ServiceCollectionExtensions
     {
         return HttpPolicyExtensions
             .HandleTransientHttpError()
+            .Or<TaskCanceledException>()
+            .Or<TimeoutException>()
             .CircuitBreakerAsync(
                 handledEventsAllowedBeforeBreaking: 5,
                 durationOfBreak: TimeSpan.FromSeconds(30));
@@ -77,6 +81,8 @@ public static class ServiceCollectionExtensions
     {
         return HttpPolicyExtensions
             .HandleTransientHttpError()
+            .Or<TaskCanceledException>()
+            .Or<TimeoutException>()
             .CircuitBreakerAsync(
                 handledEventsAllowedBeforeBreaking: 5,
                 durationOfBreak: TimeSpan.FromSeconds(30),

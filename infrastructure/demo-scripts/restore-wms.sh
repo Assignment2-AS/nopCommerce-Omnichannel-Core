@@ -17,7 +17,7 @@ for id in "$WMS_UNAVAILABLE_ID" "$WMS_DEGRADED_ID"; do
 done
 
 if [ "$removed" -gt 0 ]; then
-  echo "[demo] WMS fault removed — normal stub active (200 OK on /api/stock/*)"
+  echo "[demo] WMS fault removed — normal stub active (200 OK on POST /api/wms/orders)"
   echo "[demo]"
   echo "[demo] Watch OrderSyncAdapter logs for:"
   echo "[demo]   - Circuit breaker: HALF-OPEN probe"
