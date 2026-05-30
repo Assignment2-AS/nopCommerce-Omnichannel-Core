@@ -1,10 +1,10 @@
 {
   "id": "f1000002-0000-0000-0000-000000000000",
-  "name": "WMS - Degraded / slow response (fault injection — activate via script)",
+  "name": "WMS - Degraded / slow order sync",
   "priority": 1,
   "request": {
-    "method": "GET",
-    "urlPathPattern": "/api/stock/([^/]+)"
+    "method": "POST",
+    "url": "/api/wms/orders"
   },
   "response": {
     "status": 503,
@@ -14,7 +14,7 @@
     },
     "jsonBody": {
       "error": "Gateway Timeout",
-      "message": "WMS response timed out after 10s delay"
+      "message": "WMS order sync timed out after 10s delay"
     }
   }
 }

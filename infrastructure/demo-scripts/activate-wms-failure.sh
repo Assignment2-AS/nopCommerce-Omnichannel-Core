@@ -5,7 +5,7 @@ WIREMOCK_URL="${WIREMOCK_URL:-http://localhost:8080}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROFILE="$SCRIPT_DIR/../wiremock/fault-profiles/wms-unavailable.json"
 
-echo "[demo] Injecting WMS fault: 503 on all GET /api/stock/* calls..."
+echo "[demo] Injecting WMS fault: 503 on POST /api/wms/orders..."
 
 http_code=$(curl -s -o /dev/null -w "%{http_code}" \
   -X POST "$WIREMOCK_URL/__admin/mappings" \

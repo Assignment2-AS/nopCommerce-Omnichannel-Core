@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Nop.Core.Infrastructure;
+using Nop.Data;
 using Nop.Plugin.Integration.OrderPublisher.Services;
 
 namespace Nop.Plugin.Integration.OrderPublisher.Infrastructure;
@@ -29,6 +30,9 @@ public class NopStartup : INopStartup
     /// <param name="configuration">Configuration of the application</param>
     public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
     {
+        if (!DataSettingsManager.IsDatabaseInstalled())
+            return;
+
         // Register the Outbox drain loop as a hosted background service.
         // IRepository<OutboxMessage> is Scoped -> the service creates its own scope
         // per polling iteration via IServiceScopeFactory (injected by the runtime).

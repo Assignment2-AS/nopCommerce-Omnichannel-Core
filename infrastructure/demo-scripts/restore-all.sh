@@ -12,7 +12,7 @@ if [ "$http_code" = "200" ]; then
   echo "[demo] All fault injections removed"
   echo "[demo] Active stubs restored:"
   echo "[demo]   ERP  — POST /api/orders       → 200 OK"
-  echo "[demo]   WMS  — GET  /api/stock/{id}   → 200 OK + stock level"
+  echo "[demo]   WMS  — POST /api/wms/orders   → 200 OK"
 else
   echo "[demo] ERROR: WireMock Admin API returned $http_code"
   exit 1

@@ -1,0 +1,17 @@
+{
+  "name": "WMS - Accept order (normal)",
+  "request": {
+    "method": "POST",
+    "url": "/api/wms/orders"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "status": "received",
+      "message": "Order accepted by WMS and queued for fulfillment"
+    }
+  }
+}
