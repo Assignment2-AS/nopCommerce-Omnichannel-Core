@@ -1,7 +1,11 @@
 # Local Development Setup
 
+**Author:** Carolina Reis | Technical Lead  
+**Date:** 2026-05-26  
+**Scenario:** Scenario C - Omnichannel Commerce Core  
+
 > VerdeMart Retail · nopCommerce-Omnichannel-Core  
-> Last updated: 2026-05-26
+> Last updated: 2026-05-30
 
 ## Prerequisites
 
@@ -185,6 +189,14 @@ Shipping:
 Payment:
 1. Go to **Configuration → Payment methods**
 2. Find **Check / Money Order** → click **Activate**
+
+### Disable minimum order placement interval
+
+By default nopCommerce enforces a 1-second minimum between orders, which blocks rapid test order placement. Disable it:
+
+```bash
+echo "USE nopcommerce; UPDATE Setting SET Value = '0' WHERE Name = 'ordersettings.minimumorderplacementinterval'" | docker exec -i verdemart-sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'VerdeMart_2026!' -C
+```
 
 ### Place a test order
 
