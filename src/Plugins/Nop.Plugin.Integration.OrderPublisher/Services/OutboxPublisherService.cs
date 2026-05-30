@@ -94,13 +94,36 @@ public class OutboxPublisherService : BackgroundService
             durable: true,
             autoDelete: false);
 
-        // Declare the queue as durable and bind to the exchange
+        // Declare the DLX and DLQ so the queue arguments match what OrderSyncAdapter declares
+        _channel.ExchangeDeclare(
+            exchange: "order.placed.dlx",
+            type: ExchangeType.Direct,
+            durable: true,
+            autoDelete: false);
+
+        _channel.QueueDeclare(
+            queue: "order.placed.dlq",
+            durable: true,
+            exclusive: false,
+            autoDelete: false,
+            arguments: null);
+
+        _channel.QueueBind(
+            queue: "order.placed.dlq",
+            exchange: "order.placed.dlx",
+            routingKey: "order.placed.dlq");
+
+        // Declare the queue as durable with DLX so both services agree on queue arguments
         _channel.QueueDeclare(
             queue: QueueName,
             durable: true,
             exclusive: false,
             autoDelete: false,
-            arguments: null);
+            arguments: new Dictionary<string, object?>
+            {
+                ["x-dead-letter-exchange"] = "order.placed.dlx",
+                ["x-dead-letter-routing-key"] = "order.placed.dlq"
+            });
 
         _channel.QueueBind(
             queue: QueueName,
