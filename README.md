@@ -6,6 +6,30 @@ Architectural evolution of [nopCommerce](https://www.nopcommerce.com/) towards a
 
 ---
 
+## Table of Contents
+
+- [Repository Structure](#repository-structure)
+- [Documentation](#documentation)
+  - [Architecture Decision Records](#architecture-decision-records)
+  - [Local Development Setup](#local-development-setup)
+  - [Evidence](#evidence)
+  - [Spike](#spike)
+  - [Slides](#slides)
+- [Demo Setup](#demo-setup)
+  - [Prerequisites](#prerequisites)
+  - [Step 1: Start supporting services](#step-1-start-supporting-services)
+  - [Step 2: Build and run nopCommerce](#step-2-build-and-run-nopcommerce)
+  - [Step 3: Start OrderSyncAdapter](#step-3-start-ordersyncadapter)
+  - [Step 4: Place a test order (happy path)](#step-4-place-a-test-order-happy-path)
+  - [Step 5: Activate WMS degradation scenario](#step-5-activate-wms-degradation-scenario)
+  - [Step 6: Restore WMS and observe recovery](#step-6-restore-wms-and-observe-recovery)
+  - [Step 7: Restore all (clean slate for next run)](#step-7-restore-all-clean-slate-for-next-run)
+  - [Available Scripts](#available-scripts)
+  - [Useful URLs](#useful-urls)
+- [Original nopCommerce](#original-nopcommerce)
+
+---
+
 ## Repository Structure
 
 ```
@@ -101,6 +125,16 @@ All written documentation lives in the [`docs/`](docs/) folder:
 Full setup instructions, including first-time installation, plugin build, and OrderSyncAdapter startup:
 
 - [docs/local-dev-setup.md](docs/local-dev-setup.md)
+
+### Evidence
+
+| Document | Description |
+|---|---|
+| [evidence/scenarios/idempotency-validation.md](evidence/scenarios/idempotency-validation.md) | Duplicate message handling validation |
+| [evidence/scenarios/wms-degradation.md](evidence/scenarios/wms-degradation.md) | WMS 503 fault injection scenario |
+| [evidence/scenarios/wms-recovery.md](evidence/scenarios/wms-recovery.md) | Automatic reconciliation after WMS recovery |
+| [evidence/known-limitations.md](evidence/known-limitations.md) | At-least-once delivery, polling latency, WireMock scope, identity gap |
+| [evidence/measurements.md](evidence/measurements.md) | Outbox latency, reconnection time, success rate |
 
 ### Spike
 
@@ -229,6 +263,27 @@ Observe:
 bash infrastructure/demo-scripts/restore-all.sh
 ```
 
+### Available Scripts
+
+#### `infrastructure/demo-scripts/`
+
+Fault-injection and restore scripts that drive WireMock via its Admin API. All scripts respect the `WIREMOCK_URL` environment variable (default: `http://localhost:8080`).
+
+| Script | Purpose |
+|---|---|
+| `activate-erp-failure.sh` | Injects a 503 on all `POST /api/orders` ERP calls: forces DLQ routing after 3 retries |
+| `activate-wms-degraded.sh` | Injects a 10 s delay + 503 on `POST /api/wms/orders`: triggers timeout/circuit-breaker behaviour |
+| `activate-wms-failure.sh` | Injects a 503 on all `POST /api/wms/orders` calls: simulates WMS hard failure |
+| `restore-all.sh` | Resets all WireMock mappings to file-based defaults (clean slate) |
+| `restore-erp.sh` | Removes the active ERP fault mapping, restoring normal 200 OK responses |
+| `restore-wms.sh` | Removes the active WMS fault mapping, restoring normal 200 OK responses |
+
+#### `infrastructure/helper-scripts/`
+
+| Script | Purpose |
+|---|---|
+| `reset-demo-data.sh` | Clears orders, cart items, and outbox messages from SQL Server without touching nopCommerce settings or plugin configuration: useful for re-running demo scenarios from a clean state |
+
 ### Useful URLs
 
 | URL | Description |
@@ -238,20 +293,6 @@ bash infrastructure/demo-scripts/restore-all.sh
 | `http://localhost:15672` | RabbitMQ Management UI |
 | `http://localhost:8080/__admin/requests` | WireMock request journal |
 | `http://localhost:8080/__admin/mappings` | WireMock active mappings |
-
----
-
-## Evidence Pack
-
-Measurements, experiment results, and known limitations are in the [`evidence/`](evidence/) folder:
-
-| Document | Description |
-|---|---|
-| [evidence/scenarios/idempotency-validation.md](evidence/scenarios/idempotency-validation.md) | Duplicate message handling validation |
-| [evidence/scenarios/wms-degradation.md](evidence/scenarios/wms-degradation.md) | WMS 503 fault injection scenario |
-| [evidence/scenarios/wms-recovery.md](evidence/scenarios/wms-recovery.md) | Automatic reconciliation after WMS recovery |
-| [evidence/known-limitations.md](evidence/known-limitations.md) | At-least-once delivery, polling latency, WireMock scope, identity gap |
-| [evidence/measurements.md](evidence/measurements.md) | Outbox latency, reconnection time, success rate |
 
 ---
 
