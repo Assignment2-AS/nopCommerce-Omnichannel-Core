@@ -17,7 +17,7 @@ public static class RabbitMqTopology
     {
         ArgumentNullException.ThrowIfNull(channel);
 
-        // A DLQ recebe mensagens rejeitadas da fila principal, para reconciliação posterior.
+        // DLQ receives messages rejected from the main queue for later reconciliation.
         await channel.ExchangeDeclareAsync(
             exchange: DeadLetterExchangeName,
             type: ExchangeType.Direct,

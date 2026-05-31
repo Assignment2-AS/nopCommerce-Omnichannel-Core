@@ -41,6 +41,14 @@ public class NopStartup : INopStartup
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 provider.GetRequiredService<ILogger<OutboxPublisherService>>(),
                 configuration));
+
+        // Register the WMS stock sync consumer as a hosted background service.
+        // Listens on wms.stock.update and applies absolute stock levels to nopCommerce products.
+        services.AddHostedService(provider =>
+            new WmsStockSyncService(
+                provider.GetRequiredService<IServiceScopeFactory>(),
+                provider.GetRequiredService<ILogger<WmsStockSyncService>>(),
+                configuration));
     }
 
     /// <summary>

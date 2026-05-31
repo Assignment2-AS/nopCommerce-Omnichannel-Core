@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Polly.CircuitBreaker;
+using VerdeMart.OrderSyncAdapter.Infrastructure;
 using VerdeMart.OrderSyncAdapter.Models;
 
 namespace VerdeMart.OrderSyncAdapter.Implementation;
@@ -21,13 +22,16 @@ public sealed class WireMockOrderSyncAdapter : IOrderSyncAdapter
     private static readonly ConcurrentDictionary<int, string> WmsResponseCache = new();
 
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IWmsStockPublisher _stockPublisher;
     private readonly ILogger<WireMockOrderSyncAdapter> _logger;
 
     public WireMockOrderSyncAdapter(
         IHttpClientFactory httpClientFactory,
+        IWmsStockPublisher stockPublisher,
         ILogger<WireMockOrderSyncAdapter> logger)
     {
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+        _stockPublisher = stockPublisher ?? throw new ArgumentNullException(nameof(stockPublisher));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -43,7 +47,7 @@ public sealed class WireMockOrderSyncAdapter : IOrderSyncAdapter
 
         var json = JsonSerializer.Serialize(order);
 
-        _logger.LogInformation("A iniciar sincronizacao da encomenda com ERP e WMS via WireMock.");
+        _logger.LogInformation("Starting order sync with ERP and WMS via WireMock.");
 
         var erpTask = SendToSystemAsync(ClientName, EndpointPath, "ERP", order.OrderId, json, cancellationToken);
         var wmsTask = SendToSystemAsync(WmsClientName, WmsEndpointPath, "WMS", order.OrderId, json, cancellationToken);
@@ -55,7 +59,7 @@ public sealed class WireMockOrderSyncAdapter : IOrderSyncAdapter
 
         if (erpResult.IsSuccess && wmsResult.IsSuccess)
         {
-            _logger.LogInformation("Encomenda sincronizada com sucesso no ERP e no WMS.");
+            _logger.LogInformation("Order synced successfully in ERP and WMS.");
             return OrderSyncResult.Success(200, "Order synchronized successfully in ERP and WMS.");
         }
 
@@ -64,7 +68,7 @@ public sealed class WireMockOrderSyncAdapter : IOrderSyncAdapter
         var isTimeout = erpResult.IsTimeout || wmsResult.IsTimeout;
 
         _logger.LogError(
-            "Sincronizacao incompleta. ERP sucesso: {ErpSuccess}; WMS sucesso: {WmsSuccess}.",
+            "Sync incomplete. ERP success: {ErpSuccess}; WMS success: {WmsSuccess}.",
             erpResult.IsSuccess,
             wmsResult.IsSuccess);
 
@@ -99,13 +103,15 @@ public sealed class WireMockOrderSyncAdapter : IOrderSyncAdapter
                     WmsResponseCache[orderId] = responseBody;
                 }
 
-                _logger.LogInformation("Sincronizacao concluida com sucesso no {SystemName}. StatusCode: {StatusCode}", systemName, (int)response.StatusCode);
+                _logger.LogInformation(
+                    "Sync successful on {SystemName}. StatusCode: {StatusCode}",
+                    systemName, (int)response.StatusCode);
                 return OrderSyncResult.Success((int)response.StatusCode);
             }
 
             var body = await response.Content.ReadAsStringAsync(cancellationToken);
             _logger.LogError(
-                "Falha de sincronizacao com {SystemName}. StatusCode: {StatusCode}; Body: {Body}",
+                "Sync failed on {SystemName}. StatusCode: {StatusCode}; Body: {Body}",
                 systemName,
                 (int)response.StatusCode,
                 body);
@@ -116,7 +122,7 @@ public sealed class WireMockOrderSyncAdapter : IOrderSyncAdapter
         }
         catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
         {
-            _logger.LogError(ex, "Timeout ao comunicar com o {SystemName} simulado (WireMock).", systemName);
+            _logger.LogError(ex, "Timeout communicating with simulated {SystemName} (WireMock).", systemName);
             return OrderSyncResult.Failure(
                 null,
                 $"Timeout while calling {systemName} endpoint.",
@@ -124,7 +130,7 @@ public sealed class WireMockOrderSyncAdapter : IOrderSyncAdapter
         }
         catch (HttpRequestException ex)
         {
-            _logger.LogError(ex, "Erro de transporte HTTP ao comunicar com o {SystemName} simulado (WireMock).", systemName);
+            _logger.LogError(ex, "HTTP transport error communicating with simulated {SystemName} (WireMock).", systemName);
             return OrderSyncResult.Failure(
                 null,
                 $"HTTP error while calling {systemName} endpoint.");
@@ -139,7 +145,7 @@ public sealed class WireMockOrderSyncAdapter : IOrderSyncAdapter
             WmsResponseCache.TryGetValue(orderId, out var cachedBody);
 
             _logger.LogWarning(
-                "Circuit breaker aberto para WMS. A devolver conteudo stale em cache para OrderId {OrderId}.",
+                "WMS circuit breaker open. Returning stale cached response for OrderId {OrderId}.",
                 orderId);
 
             return OrderSyncResult.StaleFallback(
@@ -147,6 +153,29 @@ public sealed class WireMockOrderSyncAdapter : IOrderSyncAdapter
                 string.IsNullOrWhiteSpace(cachedBody)
                     ? $"WMS circuit open. Using stale cached response for OrderId {orderId}."
                     : $"WMS circuit open. Using stale cached response for OrderId {orderId}: {cachedBody}");
+        }
+    }
+
+    private async Task PublishStockUpdatesAsync(NopOrderPayload order, CancellationToken cancellationToken)
+    {
+        foreach (var item in order.Items)
+        {
+            if (string.IsNullOrWhiteSpace(item.Sku))
+                continue;
+
+            try
+            {
+                await _stockPublisher.PublishAsync(
+                    new WmsStockPayload { Sku = item.Sku, QuantityDelta = -item.Quantity },
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                // Stock publish failure must not roll back a successful order sync.
+                _logger.LogWarning(ex,
+                    "[WmsStockPublisher] Failed to publish stock update for SKU={Sku}. Continuing.",
+                    item.Sku);
+            }
         }
     }
 

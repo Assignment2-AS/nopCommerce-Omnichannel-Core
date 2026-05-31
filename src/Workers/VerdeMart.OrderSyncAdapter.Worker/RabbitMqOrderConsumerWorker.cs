@@ -35,10 +35,10 @@ public sealed class RabbitMqOrderConsumerWorker : BackgroundService
         var connectionString = _configuration.GetValue<string>("RabbitMq:ConnectionString");
         if (string.IsNullOrWhiteSpace(connectionString))
         {
-            throw new InvalidOperationException("A configuração RabbitMq:ConnectionString é obrigatória.");
+            throw new InvalidOperationException("RabbitMq:ConnectionString configuration is required.");
         }
 
-        // O worker fica isolado da infraestrutura web e só reage a eventos da fila.
+        // Worker is isolated from the web infrastructure and only reacts to queue events.
         var factory = new ConnectionFactory
         {
             Uri = new Uri(connectionString),
@@ -67,7 +67,7 @@ public sealed class RabbitMqOrderConsumerWorker : BackgroundService
 
                 if (orderPayload is null)
                 {
-                    _logger.LogError("Mensagem inválida recebida na fila {QueueName}.", RabbitMqTopology.OrderQueueName);
+                    _logger.LogError("Invalid message received on queue {QueueName}.", RabbitMqTopology.OrderQueueName);
                     await channel.BasicNackAsync(eventArgs.DeliveryTag, multiple: false, requeue: false, cancellationToken: stoppingToken);
                     return;
                 }
@@ -77,28 +77,28 @@ public sealed class RabbitMqOrderConsumerWorker : BackgroundService
                 using var scope = _scopeFactory.CreateScope();
                 var orderSyncAdapter = scope.ServiceProvider.GetRequiredService<IOrderSyncAdapter>();
 
-                _logger.LogInformation("A processar encomenda {OrderId} da fila {QueueName}.", orderPayload.OrderId, RabbitMqTopology.OrderQueueName);
+                _logger.LogInformation("Processing order {OrderId} from queue {QueueName}.", orderPayload.OrderId, RabbitMqTopology.OrderQueueName);
 
                 var result = await orderSyncAdapter.SyncOrderAsync(orderPayload, stoppingToken);
 
                 if (result.IsSuccess)
                 {
-                    _logger.LogInformation("Encomenda {OrderId} sincronizada com sucesso. Ack da mensagem.", orderPayload.OrderId);
+                    _logger.LogInformation("Order {OrderId} synced successfully. Acking message.", orderPayload.OrderId);
                     await channel.BasicAckAsync(eventArgs.DeliveryTag, multiple: false, cancellationToken: stoppingToken);
                     return;
                 }
 
                 _logger.LogError(
-                    "Falha ao sincronizar a encomenda {OrderId}. Message: {Message}. Envio para DLQ.",
+                    "Failed to sync order {OrderId}. Message: {Message}. Routing to DLQ.",
                     orderPayload.OrderId,
                     result.Message);
 
-                // Nack sem requeue envia a mensagem para a DLQ quando a sincronizacao falha definitivamente.
+                // Nack without requeue routes the message to the DLQ when sync fails definitively.
                 await channel.BasicNackAsync(eventArgs.DeliveryTag, multiple: false, requeue: false, cancellationToken: stoppingToken);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Erro inesperado ao processar a mensagem da fila {QueueName} para OrderId {OrderId}.", RabbitMqTopology.OrderQueueName, orderId);
+                _logger.LogError(ex, "Unexpected error processing message from queue {QueueName} for OrderId {OrderId}.", RabbitMqTopology.OrderQueueName, orderId);
                 await channel.BasicNackAsync(eventArgs.DeliveryTag, multiple: false, requeue: false, cancellationToken: stoppingToken);
             }
         };
@@ -109,7 +109,7 @@ public sealed class RabbitMqOrderConsumerWorker : BackgroundService
             consumer: consumer,
             cancellationToken: stoppingToken);
 
-        _logger.LogInformation("Worker RabbitMQ iniciado e à escuta da fila {QueueName}.", RabbitMqTopology.OrderQueueName);
+        _logger.LogInformation("RabbitMQ worker started. Listening on queue {QueueName}.", RabbitMqTopology.OrderQueueName);
 
         try
         {
