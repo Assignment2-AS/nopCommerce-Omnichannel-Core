@@ -1,7 +1,7 @@
 # ADR-001: Asynchronous Messaging via RabbitMQ for External System Integration
 
 **Date:** 2026-05-02  
-**Status:** Draft  
+**Status:** Accepted  
 **Deciders:** Carolina Reis | Technical Lead  
 **Scenario:** Scenario C - Omnichannel Commerce Core
 
@@ -41,6 +41,39 @@ nopCommerce's responsibility ends at publishing the event. It does not wait for,
 **Neutral / Notes:**
 - RabbitMQ queues are declared as `durable=true` and messages as `persistent` to survive broker restarts
 - The publishing step itself is made reliable via the Outbox Pattern (see ADR-002)
+
+---
+
+## Implementation
+
+This decision was implemented as part of the `Nop.Plugin.Integration.OrderPublisher` plugin
+(`src/Plugins/Nop.Plugin.Integration.OrderPublisher/`).
+
+**Producing side (nopCommerce):**
+
+- `OrderPlacedConsumer` (`Consumers/OrderPlacedConsumer.cs`) handles `IConsumer<OrderPlacedEvent>`
+  and writes a pending `OutboxMessage` to the database immediately after the order is persisted.
+  It does **not** publish to RabbitMQ directly; that is the responsibility of the background service.
+- `OutboxPublisherService` (`Services/OutboxPublisherService.cs`) is a `BackgroundService` that
+  polls the `Integration_OutboxMessage` table every 2 s, publishes each pending row to the
+  `order.placed` exchange with publisher confirms (`WaitForConfirmsOrDie`), and marks the row
+  as processed only after the broker acknowledges it.
+
+**Exchange and queue configuration (confirmed at runtime):**
+
+- Exchange: `order.placed`, type `direct`, `durable=true`
+- Queue: `order.placed`, `durable=true`, bound to the exchange with routing key `order.placed`
+- Message delivery mode: `persistent` (mode 2) - survives broker restart
+- Publisher confirms enabled: broker acks each message after writing to disk
+
+**RabbitMQ connection configuration** comes from `appsettings.json` keys
+`RabbitMQ:Host`, `RabbitMQ:Port`, `RabbitMQ:Username`, `RabbitMQ:Password`.
+`AutomaticRecoveryEnabled = true` with `NetworkRecoveryInterval = 5 s` handles broker restarts
+(risk R4 from the original risk plan, validated in `spike/rabbitmq-spike/`).
+
+**No deviations from the original decision.** The synchronous publish path (Alternative A)
+was never introduced. The interface between nopCommerce and downstream systems remains
+exclusively the RabbitMQ queue.
 
 ---
 
