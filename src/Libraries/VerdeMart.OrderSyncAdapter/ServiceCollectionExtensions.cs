@@ -37,9 +37,9 @@ public static class ServiceCollectionExtensions
                 client.BaseAddress = baseUri;
                 client.Timeout = TimeSpan.FromSeconds(5);
             })
-            // Retry para suportar falhas transitórias sem expor a instabilidade ao domínio.
+            // Retry to handle transient failures without exposing instability to the domain.
             .AddPolicyHandler(GetRetryPolicy(retryIntervals))
-            // Circuit Breaker para proteger o sistema quando o ERP estiver indisponível por vários erros seguidos.
+            // Circuit breaker to protect the system when ERP is unavailable across multiple consecutive errors.
             .AddPolicyHandler(GetCircuitBreakerPolicy());
 
         services.AddHttpClient(WireMockWmsClientName, client =>
@@ -47,12 +47,13 @@ public static class ServiceCollectionExtensions
                 client.BaseAddress = baseUri;
                 client.Timeout = TimeSpan.FromSeconds(5);
             })
-            // Mesma política de retry para o WMS, mantendo consistência de resiliência.
+            // Same retry policy for WMS, keeping resilience consistent across both clients.
             .AddPolicyHandler(GetRetryPolicy(retryIntervals))
-            // O circuito separado evita que a falha do WMS degrade o ERP por arrastamento.
+            // Separate circuit prevents WMS failures from cascading into ERP degradation.
             .AddPolicyHandler(GetCircuitBreakerPolicy(wmsCircuitBreakerStateTracker));
 
         services.AddScoped<IOrderSyncAdapter, WireMockOrderSyncAdapter>();
+        services.AddSingleton<IWmsStockPublisher, Infrastructure.NullWmsStockPublisher>();
 
         return services;
     }

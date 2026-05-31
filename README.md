@@ -130,9 +130,10 @@ Full setup instructions, including first-time installation, plugin build, and Or
 
 | Document | Description |
 |---|---|
-| [evidence/scenarios/idempotency-validation.md](evidence/scenarios/idempotency-validation.md) | Duplicate message handling validation |
-| [evidence/scenarios/wms-degradation.md](evidence/scenarios/wms-degradation.md) | WMS 503 fault injection scenario |
-| [evidence/scenarios/wms-recovery.md](evidence/scenarios/wms-recovery.md) | Automatic reconciliation after WMS recovery |
+| [evidence/scenarios/1-wms-degradation.md](evidence/scenarios/1-wms-degradation.md) | WMS 503 fault injection scenario |
+| [evidence/scenarios/2-wms-recovery.md](evidence/scenarios/2-wms-recovery.md) | Automatic reconciliation after WMS recovery |
+| [evidence/scenarios/3-idempotency-validation.md](evidence/scenarios/3-idempotency-validation.md) | Duplicate message handling validation |
+| [evidence/scenarios/4-stock-sync.md](evidence/scenarios/4-stock-sync.md) | Cross-channel stock visibility: WMS restock reflected in nopCommerce |
 | [evidence/known-limitations.md](evidence/known-limitations.md) | At-least-once delivery, polling latency, WireMock scope, identity gap |
 | [evidence/measurements.md](evidence/measurements.md) | Outbox latency, reconnection time, success rate |
 
@@ -283,6 +284,7 @@ Fault-injection and restore scripts that drive WireMock via its Admin API. All s
 | Script | Purpose |
 |---|---|
 | `reset-demo-data.sh` | Clears orders, cart items, and outbox messages from SQL Server without touching nopCommerce settings or plugin configuration: useful for re-running demo scenarios from a clean state |
+| `simulate-wms-restock.sh <sku> <delta>` | Publishes a `wms.stock.update` message simulating a WMS stock event: positive delta for restock, negative for adjustment (e.g. `simulate-wms-restock.sh AP_MBP_13 50`) |
 
 ### Useful URLs
 

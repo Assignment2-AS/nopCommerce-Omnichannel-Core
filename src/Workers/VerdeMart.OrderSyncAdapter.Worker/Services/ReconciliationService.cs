@@ -42,10 +42,10 @@ public sealed class ReconciliationService : BackgroundService
         var connectionString = _configuration.GetValue<string>("RabbitMq:ConnectionString");
         if (string.IsNullOrWhiteSpace(connectionString))
         {
-            throw new InvalidOperationException("A configuração RabbitMq:ConnectionString é obrigatória.");
+            throw new InvalidOperationException("RabbitMq:ConnectionString configuration is required.");
         }
 
-        // O serviço de reconciliação consome a DLQ e tenta recuperar encomendas após a indisponibilidade.
+        // Reconciliation service consumes the DLQ and retries orders after the outage.
         var factory = new ConnectionFactory
         {
             Uri = new Uri(connectionString),
@@ -58,7 +58,7 @@ public sealed class ReconciliationService : BackgroundService
 
         await RabbitMqTopology.EnsureAsync(channel, stoppingToken);
 
-        _logger.LogInformation("ReconciliationService iniciado. A aguardar estado Closed do circuito do WMS.");
+        _logger.LogInformation("ReconciliationService started. Waiting for WMS circuit to close.");
 
         if (_circuitBreakerStateTracker.IsClosed)
         {
@@ -74,7 +74,7 @@ public sealed class ReconciliationService : BackgroundService
 
     private async Task DrainDeadLetterQueueAsync(IChannel channel, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("A drenar a DLQ {QueueName} após recuperação do WMS.", RabbitMqTopology.DeadLetterQueueName);
+        _logger.LogInformation("Draining DLQ {QueueName} after WMS recovery.", RabbitMqTopology.DeadLetterQueueName);
 
         var bufferedMessages = new List<(BasicGetResult Delivery, NopOrderPayload Payload)>();
 
@@ -88,7 +88,7 @@ public sealed class ReconciliationService : BackgroundService
 
             if (orderPayload is null)
             {
-                _logger.LogError("Mensagem inválida encontrada na DLQ {QueueName}.", RabbitMqTopology.DeadLetterQueueName);
+                _logger.LogError("Invalid message found in DLQ {QueueName}.", RabbitMqTopology.DeadLetterQueueName);
                 await channel.BasicNackAsync(delivery.DeliveryTag, multiple: false, requeue: true, cancellationToken: cancellationToken);
                 continue;
             }
@@ -102,7 +102,7 @@ public sealed class ReconciliationService : BackgroundService
         {
             if (_processedOrders.ContainsKey(item.Payload.OrderId))
             {
-                _logger.LogInformation("Encomenda {OrderId} já reconciliada anteriormente. Ack da mensagem na DLQ.", item.Payload.OrderId);
+                _logger.LogInformation("Order {OrderId} already reconciled. Acking DLQ message.", item.Payload.OrderId);
                 await channel.BasicAckAsync(item.Delivery.DeliveryTag, multiple: false, cancellationToken: cancellationToken);
                 continue;
             }
@@ -110,24 +110,24 @@ public sealed class ReconciliationService : BackgroundService
             using var scope = _scopeFactory.CreateScope();
             var orderSyncAdapter = scope.ServiceProvider.GetRequiredService<IOrderSyncAdapter>();
 
-            _logger.LogInformation("A reconciliar encomenda {OrderId} a partir da DLQ por ordem de criação.", item.Payload.OrderId);
+            _logger.LogInformation("Reconciling order {OrderId} from DLQ in creation order.", item.Payload.OrderId);
 
             var result = await orderSyncAdapter.SyncOrderAsync(item.Payload, cancellationToken);
 
             if (result.IsSuccess)
             {
                 _processedOrders.TryAdd(item.Payload.OrderId, 0);
-                _logger.LogInformation("Reconciliacao concluida com sucesso para a encomenda {OrderId}. Ack da DLQ.", item.Payload.OrderId);
+                _logger.LogInformation("Reconciliation successful for order {OrderId}. Acking DLQ.", item.Payload.OrderId);
                 await channel.BasicAckAsync(item.Delivery.DeliveryTag, multiple: false, cancellationToken: cancellationToken);
                 continue;
             }
 
             _logger.LogError(
-                "Falha persistente na reconciliacao da encomenda {OrderId}. Message: {Message}. Requeue na DLQ.",
+                "Persistent reconciliation failure for order {OrderId}. Message: {Message}. Requeuing to DLQ.",
                 item.Payload.OrderId,
                 result.Message);
 
-            // Na DLQ usamos requeue para tentar mais tarde sem perder a mensagem.
+            // Requeue to DLQ so the message is retried later without being lost.
             await channel.BasicNackAsync(item.Delivery.DeliveryTag, multiple: false, requeue: true, cancellationToken: cancellationToken);
         }
     }
