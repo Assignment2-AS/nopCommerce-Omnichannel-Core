@@ -11,7 +11,7 @@
 
 ```mermaid
 graph TB
-    subgraph CC["Commerce Core Context — nopCommerce monolith"]
+    subgraph CC["Commerce Core Context: nopCommerce monolith"]
         direction TB
         OP["Order Placement\n(checkout, cart, payment)"]
         CAT["Product Catalogue\n(read: stock level display)"]
@@ -22,11 +22,11 @@ graph TB
         OUTPUB -->|"polls"| OUT
     end
 
-    subgraph OI["Order Integration Context — OrderSyncAdapter container"]
+    subgraph OI["Order Integration Context: OrderSyncAdapter container"]
         direction TB
         CONS["RabbitMQ Consumer\n(order.placed queue)"]
         POLLY["Polly Retry Pipeline\n(3 retries, exponential backoff)"]
-        CB["Circuit Breaker\n(WMS — opens after 5 failures,\nhalf-open after 30s)"]
+        CB["Circuit Breaker\n(WMS: opens after 5 failures,\nhalf-open after 30s)"]
         RECON["ReconciliationService\n(drains DLQ on WMS recovery)"]
         DLH["Dead-Letter Handler\n(order.placed.dlq)"]
         CONS --> POLLY
@@ -39,7 +39,7 @@ graph TB
         QUEUE["RabbitMQ\norder.placed (durable)\norder.placed.dlq (durable)"]
     end
 
-    subgraph EXT["External System Stubs — WireMock container"]
+    subgraph EXT["External System Stubs: WireMock container"]
         ERP["ERP Stub\nPOST /api/orders\n→ 200 OK (normal)\n→ 503 (fault injected)"]
         WMS["WMS Stub\nPOST /api/wms/orders (order sync)\nGET /api/stock/{id} (stock query)\n→ 200 OK (normal)\n→ 503 (fault injected)"]
     end
@@ -52,17 +52,21 @@ graph TB
     RECON -->|"HTTP GET"| WMS
 ```
 
+<div style="background-color: white; padding: 8px; display: inline-block;">
+  <img src="Bounded%20Context%20View.png" alt="Bounded Context View"/>
+</div>
+
 ---
 
 ## Context relationships
 
 | Upstream | Downstream | Relationship | Interface |
 |---|---|---|---|
-| Commerce Core | Order Integration | Published Language — `order.placed` message schema is the explicit contract | RabbitMQ queue `order.placed` |
-| Order Integration | ERP (WireMock) | Conformist — we call ERP's API as-is, no anti-corruption layer | `POST /api/orders` |
-| Order Integration | WMS (WireMock) | Conformist + ACL — circuit breaker protects the integration context from WMS instability | `POST /api/wms/orders` |
-| WMS (external) | Commerce Core | Published Language — WMS pushes stock events via RabbitMQ; `WmsStockSyncService` consumes and applies deltas | RabbitMQ queue `wms.stock.update` |
-| Commerce Core | WMS (WireMock) | Read-only stock query for display | `GET /api/stock/{id}` (via `wms-stock-query.json`) |
+| Commerce Core | Order Integration | Published Language: `order.placed` message schema is the explicit contract | RabbitMQ queue `order.placed` |
+| Order Integration | ERP (WireMock) | Conformist: we call ERP's API as-is, no anti-corruption layer | `POST /api/orders` |
+| Order Integration | WMS (WireMock) | Conformist + ACL: circuit breaker protects the integration context from WMS instability | `POST /api/wms/orders` |
+| WMS (external) | Commerce Core | Published Language: WMS pushes stock events via RabbitMQ; `WmsStockSyncService` consumes and applies deltas | RabbitMQ queue `wms.stock.update` |
+| Commerce Core | WMS (WireMock) | Read-only: nopCommerce queries stock for display only; writes flow through OrderSyncAdapter | `GET /api/stock/{id}` (via `wms-stock-query.json`) |
 
 ---
 

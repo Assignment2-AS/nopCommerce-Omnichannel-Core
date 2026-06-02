@@ -43,14 +43,23 @@ nopCommerce-Omnichannel-Core/
 │   │   └── template.md                                 # Template for ADR's
 │   ├── add-framework.md                                # ADD framework application
 │   ├── architecture-report.md                          # Architecture report
+│   ├── Bounded Context View.png                        # Bounded context view diagram export
 │   ├── bounded-context-view.md                         # Bounded context view (updated Part 2)
+│   ├── Container Diagram.png                           # Container diagram export
+│   ├── container-diagram.md                            # Container diagram (C4 Level 3)
 │   ├── Domain Model & Bounded Contexts.jpg             # Domain model and bounded context diagram
 │   ├── external-systems-selection.md                   # Rationale for external system choices
 │   ├── local-dev-setup.md                              # Local development setup guide
 │   ├── quality-attribute-scenarios.md                  # Quality attribute scenarios (QAS)
 │   ├── risk-and-validation.md                          # Identified risks and validation strategies
-│   ├── runtime-interaction-diagrams.md                 # Sequence diagrams: normal, degraded, recovery
+│   ├── Runtime Interaction Diagram (Degraded flow).png # Degraded flow diagram export
+│   ├── Runtime Interaction Diagram (Normal flow).png   # Normal flow diagram export
+│   ├── Runtime Interaction Diagram (Recovery flow).png # Recovery flow diagram export
+│   ├── Runtime Interaction Diagram (Stock sync flow).png # Stock sync flow diagram export
+│   ├── runtime-interaction-diagrams.md                 # Sequence diagrams: normal, stock sync, degraded, recovery
 │   ├── scenario-and-business-drivers.md                # Business context and key drivers
+│   ├── Startup Sequence Diagram.png                    # Startup sequence diagram export
+│   ├── startup-sequence.md                             # Startup sequence diagram and dependency order
 │   └── Target Architecture.jpg                         # Target architecture diagram
 ├── evidence/
 │   ├── scenarios/                                      # Executed test scenarios with evidence
@@ -102,14 +111,23 @@ All written documentation lives in the [`docs/`](docs/) folder:
 | [docs/adr/](docs/adr/) | Architecture Decision Records index |
 | [add-framework.md](docs/add-framework.md) | ADD (Attribute-Driven Design) framework application and traceability |
 | [architecture-report.md](docs/architecture-report.md) | Architecture report: current state, evolution path, traceability |
+| [Bounded Context View.png](docs/Bounded%20Context%20View.png) | Bounded context view diagram export |
 | [bounded-context-view.md](docs/bounded-context-view.md) | Bounded context view with Mermaid diagram (updated Part 2) |
+| [Container Diagram.png](docs/Container%20Diagram.png) | Container diagram export |
+| [container-diagram.md](docs/container-diagram.md) | Container diagram (C4 Level 3): runtime containers, ports, volumes, communication paths |
 | [Domain Model & Bounded Contexts.jpg](docs/Domain%20Model%20%26%20Bounded%20Contexts.jpg) | Domain model and bounded context diagram |
 | [external-systems-selection.md](docs/external-systems-selection.md) | Rationale for external system choices (RabbitMQ, WireMock) |
 | [local-dev-setup.md](docs/local-dev-setup.md) | Local development setup and first-time installation guide |
 | [quality-attribute-scenarios.md](docs/quality-attribute-scenarios.md) | Quality attribute scenarios (QAS-1 to QAS-5) |
 | [risk-and-validation.md](docs/risk-and-validation.md) | Identified risks (R1–R6) and validation strategies |
-| [runtime-interaction-diagrams.md](docs/runtime-interaction-diagrams.md) | Sequence diagrams: normal flow, WMS degradation, recovery |
+| [Runtime Interaction Diagram (Degraded flow).png](docs/Runtime%20Interaction%20Diagram%20(Degraded%20flow).png) | Degraded flow diagram export |
+| [Runtime Interaction Diagram (Normal flow).png](docs/Runtime%20Interaction%20Diagram%20(Normal%20flow).png) | Normal flow diagram export |
+| [Runtime Interaction Diagram (Recovery flow).png](docs/Runtime%20Interaction%20Diagram%20(Recovery%20flow).png) | Recovery flow diagram export |
+| [Runtime Interaction Diagram (Stock sync flow).png](docs/Runtime%20Interaction%20Diagram%20(Stock%20sync%20flow).png) | Stock sync flow diagram export |
+| [runtime-interaction-diagrams.md](docs/runtime-interaction-diagrams.md) | Sequence diagrams: normal flow, stock sync, WMS degradation, recovery |
 | [scenario-and-business-drivers.md](docs/scenario-and-business-drivers.md) | Business context, scenario description, and key drivers |
+| [Startup Sequence Diagram.png](docs/Startup%20Sequence%20Diagram.png) | Startup sequence diagram export |
+| [startup-sequence.md](docs/startup-sequence.md) | Startup sequence diagram: initialization order, dependencies, recovery behaviour |
 | [Target Architecture.jpg](docs/Target%20Architecture.jpg) | Target architecture diagram |
 
 ### Architecture Decision Records
