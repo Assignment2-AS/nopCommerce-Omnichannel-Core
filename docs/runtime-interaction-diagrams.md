@@ -14,11 +14,11 @@ The four diagrams below document the observable runtime behaviour during normal 
 sequenceDiagram
     actor Customer
     participant nopCommerce
-    participant OutboxDB as Outbox Table (MSSQL)
+    participant OutboxDB as Outbox Table
     participant OutboxSvc as OutboxPublisherService
     participant RabbitMQ
     participant OrderSync as OrderSyncAdapter
-    participant WireMock as WireMock (ERP + WMS)
+    participant WireMock
 
     Customer->>nopCommerce: POST /checkout/confirm
     nopCommerce->>OutboxDB: BEGIN TRANSACTION
@@ -27,8 +27,8 @@ sequenceDiagram
 
     loop Every 2 seconds
         OutboxSvc->>OutboxDB: SELECT WHERE ProcessedAt IS NULL
-        OutboxDB-->>OutboxSvc: OutboxMessage #N (CorrelationId = OrderId)
-        OutboxSvc->>RabbitMQ: Publish order.placed (persistent, durable queue)
+        OutboxDB-->>OutboxSvc: OutboxMessage N - CorrelationId = OrderId
+        OutboxSvc->>RabbitMQ: Publish order.placed - persistent durable queue
         RabbitMQ-->>OutboxSvc: Publisher confirm
         OutboxSvc->>OutboxDB: UPDATE ProcessedAt = NOW()
     end
@@ -95,7 +95,7 @@ sequenceDiagram
     participant OrderSync as OrderSyncAdapter
     participant WireMock as WireMock (WMS: fault active)
 
-    Operator->>WireMock: activate-wms-failure.sh<br/>(injects 503 on /api/stock/*)
+    Operator->>WireMock: activate-wms-failure.sh - injects 503 on POST /api/wms/orders
     note right of WireMock: Priority-1 mapping overrides normal stub
 
     Customer->>nopCommerce: POST /checkout/confirm
@@ -127,7 +127,7 @@ sequenceDiagram
     note right of OrderSync: After 5 consecutive failures across messages:<br/>Circuit breaker OPENS<br/>Subsequent WMS calls bypass network<br/>Return stale stock value with stale:true indicator
 
     note over nopCommerce: Checkout remains fully operational<br/>No customer-visible degradation
-    note over RabbitMQ: order.placed queue: new messages accumulate<br/>order.placed.dlq: failed messages visible in Management UI
+    note over RabbitMQ: order.placed.dlq has failed messages - visible in Management UI
 ```
 
 Checkout success is 100% regardless of WMS state (QAS-1). Polly retries absorb transient failures before a message moves to the DLQ. After 5 consecutive failures across messages, the circuit breaker opens and WMS calls skip the network, returning a stale cached value. Messages are not lost — the DLQ is durable and visible in the RabbitMQ Management UI.
@@ -155,23 +155,25 @@ sequenceDiagram
     note over OrderSync: Circuit breaker: HALF-OPEN state (after 30s)
     OrderSync->>WireMock: POST /api/wms/orders (probe request)
     WireMock-->>OrderSync: 200 OK
-    note over OrderSync: Circuit breaker: CLOSED
+    note over OrderSync: Circuit breaker CLOSED
 
     note over RecSvc: WMS recovery detected: circuit breaker closed event
     RecSvc->>DLQ: Consume messages ordered by CreatedAt ASC
 
     loop For each message in DLQ
-        RecSvc->>RecSvc: Check: has OrderId already been forwarded?
+        RecSvc->>RecSvc: Check - has OrderId already been forwarded?
         note right of RecSvc: Idempotency check via CorrelationId store
-        RecSvc->>WireMock: POST /api/orders (ERP)
+        RecSvc->>WireMock: POST /api/orders - ERP
+        WireMock-->>RecSvc: 200 OK
+        RecSvc->>WireMock: POST /api/wms/orders - WMS
         WireMock-->>RecSvc: 200 OK
         RecSvc->>WireMock: POST /api/wms/orders (WMS)
         WireMock-->>RecSvc: 200 OK
         RecSvc->>DLQ: ACK message
     end
 
-    note over WireMock: Request journal shows:<br/>1 POST /api/orders per OrderId (no duplicates)<br/>Verify at /__admin/requests
-    note over RabbitMQ: order.placed.dlq: empty<br/>order.placed: normal processing resumed
+    note over WireMock: Request journal shows 1 POST per OrderId<br/>No duplicates despite DLQ replay<br/>Verify at /__admin/requests
+    note over RabbitMQ: order.placed.dlq empty<br/>order.placed normal processing resumed
 ```
 
 Recovery is fully automatic once the fault is removed (QAS-3). ReconciliationService processes messages in creation order and checks each OrderId before forwarding, so duplicate ERP calls are not possible even if a message was partially processed during the outage. The WireMock request journal at `/__admin/requests` shows exactly one `POST /api/orders` per OrderId — use this to verify idempotency during the demo.
