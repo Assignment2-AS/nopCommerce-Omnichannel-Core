@@ -43,6 +43,7 @@ nopCommerce-Omnichannel-Core/
 │   │   └── template.md                                 # Template for ADR's
 │   ├── add-framework.md                                # ADD framework application
 │   ├── architecture-report.md                          # Architecture report
+│   ├── Bounded Context View.png                        # Bounded context view diagram export
 │   ├── bounded-context-view.md                         # Bounded context view (updated Part 2)
 │   ├── Container Diagram.png                           # Container diagram export
 │   ├── container-diagram.md                            # Container diagram (C4 Level 3)
@@ -109,6 +110,7 @@ All written documentation lives in the [`docs/`](docs/) folder:
 | [docs/adr/](docs/adr/) | Architecture Decision Records index |
 | [add-framework.md](docs/add-framework.md) | ADD (Attribute-Driven Design) framework application and traceability |
 | [architecture-report.md](docs/architecture-report.md) | Architecture report: current state, evolution path, traceability |
+| [Bounded Context View.png](docs/Bounded%20Context%20View.png) | Bounded context view diagram export |
 | [bounded-context-view.md](docs/bounded-context-view.md) | Bounded context view with Mermaid diagram (updated Part 2) |
 | [Container Diagram.png](docs/Container%20Diagram.png) | Container diagram export |
 | [container-diagram.md](docs/container-diagram.md) | Container diagram (C4 Level 3): runtime containers, ports, volumes, communication paths |
