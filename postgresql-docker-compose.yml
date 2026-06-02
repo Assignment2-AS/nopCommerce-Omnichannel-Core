@@ -1,3 +1,4 @@
+# NOTE: WE DO NOT USE THIS FOR THE PROJECT (see /infrastructure/docker-compose.yml)
 services:
     nopcommerce_web:
         build: .
