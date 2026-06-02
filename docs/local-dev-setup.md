@@ -175,7 +175,7 @@ cd src
 
 **2. Install the plugins:**
 1. Go to **Configuration → Local plugins**
-2. Find **Manual (Fixed or By Weight and By Total)** (`Shipping.FixedByWeightByTotal`) → click **Install**
+2. Find **Fixed Rate Shipping** (`Shipping.FixedByWeightByTotal`) → click **Install**
 3. Find **Check / Money Order** (`Payments.CheckMoneyOrder`) → click **Install**
 4. Restart the application (`~/.dotnet/dotnet run --no-build`)
 
@@ -183,7 +183,7 @@ cd src
 
 Shipping:
 1. Go to **Configuration → Shipping → Shipping providers**
-2. Find **Manual (Fixed or By Weight and By Total)** → click **Edit** → **Configure** → set rate to `0` → **Save**
+2. Find **Fixed Rate Shipping** → click **Edit** → **Configure** → set rate to `0` → **Save**
 3. Go back and click **Activate**
 
 Payment:

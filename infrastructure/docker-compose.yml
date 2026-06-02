@@ -18,7 +18,19 @@ services:
       retries: 5
     restart: unless-stopped
 
-<<<<<<< architect
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: verdemart-sqlserver
+    ports:
+      - "1433:1433"
+    environment:
+      SA_PASSWORD: "VerdeMart_2026!"
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    restart: unless-stopped
+
   wiremock:
     image: wiremock/wiremock:3.3.1
     container_name: verdemart-wiremock
@@ -29,8 +41,8 @@ services:
     command: --verbose --global-response-templating
     restart: unless-stopped
 
-=======
->>>>>>> develop
 volumes:
   rabbitmq-data:
+    driver: local
+  sqlserver-data:
     driver: local

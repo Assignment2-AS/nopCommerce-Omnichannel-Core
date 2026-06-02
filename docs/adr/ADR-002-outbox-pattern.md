@@ -1,7 +1,7 @@
 # ADR-002: Outbox Pattern for Reliable Order Event Delivery
 
 **Date:** 2026-05-02  
-**Status:** Draft  
+**Status:** Accepted  
 **Deciders:** Carolina Reis | Technical Lead  
 **Scenario:** Scenario C - Omnichannel Commerce Core
 
@@ -45,6 +45,49 @@ Because the outbox write and the order write share a single database transaction
 **Neutral / Notes:**
 - Polling interval is configurable; 2s is acceptable for the demo and documented as a known limitation
 - The outbox table is owned by the `Nop.Plugin.Integration.OrderPublisher` plugin (it does not pollute the nopCommerce core schema)
+
+---
+
+## Implementation
+
+The Outbox Pattern was implemented entirely within the `Nop.Plugin.Integration.OrderPublisher`
+plugin, without touching any nopCommerce core files.
+
+**Entities and schema:**
+
+- `OutboxMessage` (`Domain/OutboxMessage.cs`) - fields: `Id` (int, PK), `EventType` (string),
+  `Payload` (string, JSON), `CreatedOnUtc` (DateTime UTC), `ProcessedOnUtc` (DateTime? nullable),
+  `CorrelationId` (string, = `OrderId`).
+- `OutboxMessageBuilder` (`Data/Mapping/Builders/OutboxMessageBuilder.cs`) - maps to table
+  `Integration_OutboxMessage`. Column `ProcessedOnUtc` is nullable, allowing a `WHERE ProcessedOnUtc IS NULL`
+  query to efficiently select only pending rows.
+- `SchemaMigration` (`Data/Migrations/SchemaMigration.cs`) - nopCommerce migration that creates
+  the table on plugin install. Validated: table appears in the database after `InstallAsync()` is called.
+
+**Write path (`OrderPlacedConsumer`):**
+
+nopCommerce's `EventPublisher.PublishAsync(new OrderPlacedEvent(order))` is called after
+`InsertOrderAsync` completes (confirmed in `Nop.Services/Orders/OrderProcessingService.cs`
+lines 802 and 1617). By the time `OrderPlacedConsumer.HandleEventAsync` runs, the order row
+already exists. The consumer inserts the `OutboxMessage` with `publishEvent: false` to avoid
+spurious cache invalidation.
+
+**Note on transaction boundary:** nopCommerce uses LinqToDB with per-operation connections;
+there is no shared ambient transaction between the order INSERT and the Outbox INSERT.
+The ordering guarantee is provided by the event pipeline ordering, not a database transaction.
+This is a documented residual risk: a crash between the two INSERTs leaves an order with no
+Outbox row. See `evidence/known-limitations.md`.
+
+**Drain path (`OutboxPublisherService`):**
+
+- Polls every **2 s** (as decided; `PollingInterval = TimeSpan.FromSeconds(2)`).
+- Reads rows where `ProcessedOnUtc IS NULL`, ordered by `CreatedOnUtc ASC` (FIFO).
+- Publishes each row to RabbitMQ with `WaitForConfirmsOrDie(5 s)`.
+- Sets `ProcessedOnUtc = DateTime.UtcNow` only after the broker ack.
+
+**No deviations from the original decision.** Polling interval is 2 s as planned. The
+dual-write problem (Alternative A) is not present. Debezium (Alternative C) was not
+introduced.
 
 ---
 

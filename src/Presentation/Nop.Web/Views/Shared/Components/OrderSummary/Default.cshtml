@@ -135,11 +135,15 @@
                                     }
                                     @if (Model.IsEditable && item.AllowItemEditing)
                                     {
-                                        var editCartItemUrl = await NopUrl.RouteGenericUrlAsync<Product>(new { SeName = item.ProductSeName }, webHelper.GetCurrentRequestProtocol());
-                                        editCartItemUrl = webHelper.ModifyQueryString(editCartItemUrl, "updatecartitemid", item.Id.ToString());
-                                        <div class="edit-item">
-                                            <a href="@editCartItemUrl">@T("Common.Edit")</a>
-                                        </div>
+                                        var editCartItemUrl = await NopUrl.RouteGenericUrlAsync<Product>(new { SeName = item.ProductSeName });
+                                        if (!string.IsNullOrEmpty(editCartItemUrl))
+                                        {
+                                            var separator = editCartItemUrl.Contains('?') ? "&" : "?";
+                                            editCartItemUrl = $"{editCartItemUrl}{separator}updatecartitemid={item.Id}";
+                                            <div class="edit-item">
+                                                <a href="@editCartItemUrl">@T("Common.Edit")</a>
+                                            </div>
+                                        }
                                     }
                                     @if (item.Warnings.Count > 0)
                                     {

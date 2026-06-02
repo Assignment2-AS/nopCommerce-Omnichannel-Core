@@ -1,7 +1,7 @@
 # ADR-003: Extract OrderSync as Independently Deployable Integration Adapter
 
 **Date:** 2026-05-02  
-**Status:** Draft  
+**Status:** Accepted  
 **Deciders:** Carolina Reis | Technical Lead  
 **Scenario:** Scenario C - Omnichannel Commerce Core
 
@@ -53,6 +53,42 @@ Both services are orchestrated locally via `docker compose`.
 **Neutral / Notes:**
 - The Worker Service template (.NET) is the natural fit: long-running background process, no HTTP surface needed
 - The boundary is enforced by the absence of project references (OrderSyncAdapter has no reference to any Nop.* library)
+
+---
+
+## Implementation
+
+`OrderSyncAdapter` is implemented as a .NET Worker Service under
+`src/Services/OrderSyncAdapter/`. It is orchestrated alongside nopCommerce, RabbitMQ,
+and WireMock via `infrastructure/docker-compose.yml`.
+
+**Boundary enforcement (confirmed):**
+
+- `OrderSyncAdapter` has zero project references to any `Nop.*` library. Its only
+  dependency on nopCommerce is the `order.placed` queue name, declared as a string constant.
+- It does not connect to the nopCommerce SQL Server database. Connection strings for
+  `OrderSyncAdapter` reference only RabbitMQ and the WireMock HTTP endpoints.
+
+**Resilience inside `OrderSyncAdapter` (implemented by Francisco):**
+
+- Polly `ResiliencePipeline` on ERP calls: 3 retries, exponential backoff (1 s → 2 s → 4 s).
+  After 3 consecutive failures, the message is routed to `order.placed.dlq`.
+- Circuit breaker on WMS calls: opens after 5 consecutive failures, half-open after 30 s.
+  When open, the adapter returns a cached stock value with a staleness indicator.
+- `ReconciliationService`: when the circuit breaker closes (WMS recovers), re-processes
+  `order.placed.dlq` messages in creation order. Idempotency enforced via `CorrelationId = OrderId`.
+
+**docker-compose orchestration:**
+
+- `infrastructure/docker-compose.yml` starts: RabbitMQ (with management UI on `:15672`),
+  WireMock (on `:8080`), and `OrderSyncAdapter`.
+- nopCommerce is started separately (locally or via the root `docker-compose.yml`).
+- Demo scripts under `infrastructure/demo-scripts/` activate and restore WireMock fault
+  profiles without restarting containers.
+
+**No deviations from the original decision.** The adapter has no access to the nopCommerce
+database. Fault injection is done via WireMock Admin API, not by stopping the adapter itself,
+which cleanly separates the commerce core availability from the integration layer availability.
 
 ---
 
