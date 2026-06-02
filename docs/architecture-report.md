@@ -127,7 +127,23 @@ Full diagrams: [runtime-interaction-diagrams.md](runtime-interaction-diagrams.md
 
 ---
 
-## 9. Cross-cutting concerns
+## 9. Container diagram (C4 Level 3)
+
+Shows all runtime containers, exposed ports, named volumes, and communication paths — bridging the logical bounded-context view and the actual `infrastructure/docker-compose.yml`.
+
+Full diagram: [container-diagram.md](container-diagram.md)
+
+---
+
+## 10. Startup sequence diagram
+
+Documents the initialization order of all containers and components, what each one waits for before it becomes operational, and the consequence of starting out of order.
+
+Full diagram: [startup-sequence.md](startup-sequence.md)
+
+---
+
+## 11. Cross-cutting concerns
 
 | Concern | Decision | Where Applied |
 |---|---|---|
@@ -141,7 +157,7 @@ Full diagrams: [runtime-interaction-diagrams.md](runtime-interaction-diagrams.md
 
 ---
 
-## 10. Traceability matrix
+## 12. Traceability matrix
 
 | Business Driver | QA Scenario | ADR | Implementation |
 |---|---|---|---|
@@ -153,7 +169,7 @@ Full diagrams: [runtime-interaction-diagrams.md](runtime-interaction-diagrams.md
 
 ---
 
-## 11. Known limitations
+## 13. Known limitations
 
 Full list: [evidence/known-limitations.md](../evidence/known-limitations.md)
 
