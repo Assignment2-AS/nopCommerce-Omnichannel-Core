@@ -55,7 +55,8 @@ nopCommerce-Omnichannel-Core/
 │   ├── Runtime Interaction Diagram (Degraded flow).png # Degraded flow diagram export
 │   ├── Runtime Interaction Diagram (Normal flow).png   # Normal flow diagram export
 │   ├── Runtime Interaction Diagram (Recovery flow).png # Recovery flow diagram export
-│   ├── runtime-interaction-diagrams.md                 # Sequence diagrams: normal, degraded, recovery
+│   ├── Runtime Interaction Diagram (Stock sync flow).png # Stock sync flow diagram export
+│   ├── runtime-interaction-diagrams.md                 # Sequence diagrams: normal, stock sync, degraded, recovery
 │   ├── scenario-and-business-drivers.md                # Business context and key drivers
 │   ├── Startup Sequence Diagram.png                    # Startup sequence diagram export
 │   ├── startup-sequence.md                             # Startup sequence diagram and dependency order
@@ -122,7 +123,8 @@ All written documentation lives in the [`docs/`](docs/) folder:
 | [Runtime Interaction Diagram (Degraded flow).png](docs/Runtime%20Interaction%20Diagram%20(Degraded%20flow).png) | Degraded flow diagram export |
 | [Runtime Interaction Diagram (Normal flow).png](docs/Runtime%20Interaction%20Diagram%20(Normal%20flow).png) | Normal flow diagram export |
 | [Runtime Interaction Diagram (Recovery flow).png](docs/Runtime%20Interaction%20Diagram%20(Recovery%20flow).png) | Recovery flow diagram export |
-| [runtime-interaction-diagrams.md](docs/runtime-interaction-diagrams.md) | Sequence diagrams: normal flow, WMS degradation, recovery |
+| [Runtime Interaction Diagram (Stock sync flow).png](docs/Runtime%20Interaction%20Diagram%20(Stock%20sync%20flow).png) | Stock sync flow diagram export |
+| [runtime-interaction-diagrams.md](docs/runtime-interaction-diagrams.md) | Sequence diagrams: normal flow, stock sync, WMS degradation, recovery |
 | [scenario-and-business-drivers.md](docs/scenario-and-business-drivers.md) | Business context, scenario description, and key drivers |
 | [Startup Sequence Diagram.png](docs/Startup%20Sequence%20Diagram.png) | Startup sequence diagram export |
 | [startup-sequence.md](docs/startup-sequence.md) | Startup sequence diagram: initialization order, dependencies, recovery behaviour |

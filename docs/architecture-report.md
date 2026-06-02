@@ -57,9 +57,10 @@ These map to five architectural drivers:
 |---|---|---|
 | Commerce Core | Order placement, cart, catalog, customer-facing checkout | nopCommerce monolith |
 | Outbox / Event Publishing | Reliable at-least-once delivery of `order.placed` events to RabbitMQ | nopCommerce plugin (`Nop.Plugin.Integration.OrderPublisher`) |
+| WMS Stock Sync | Consumes `wms.stock.update` messages from RabbitMQ and applies stock deltas to nopCommerce products via `AdjustInventoryAsync` | nopCommerce plugin (`WmsStockSyncService`) |
 | Order Synchronisation | Consuming events, calling ERP/WMS, retry, dead-letter, reconciliation | `OrderSyncAdapter` (independent Worker Service) |
 | ERP stub | Receiving and acknowledging orders from the integration layer | WireMock (`POST /api/orders`) |
-| WMS stub | Responding to stock queries and receiving fulfillment updates | WireMock (`GET /api/stock/{id}`) |
+| WMS stub | Receiving order sync calls and stock queries from the integration layer | WireMock (`POST /api/wms/orders`, `GET /api/stock/{id}`) |
 
 See also: [bounded-context-view.md](bounded-context-view.md) (Mermaid, Part 2), [Domain Model & Bounded Contexts.jpg](Domain%20Model%20%26%20Bounded%20Contexts.jpg) (Part 1), [Target Architecture.jpg](Target%20Architecture.jpg)
 
@@ -164,7 +165,7 @@ Full diagram: [startup-sequence.md](startup-sequence.md)
 | SG-1: Decouple checkout from WMS/ERP | QAS-1 (Availability) | ADR-001 (RabbitMQ async) | `order.placed` queue; OutboxPublisherService |
 | SG-1: No silent event loss | QAS-2 (Reliability) | ADR-002 (Outbox Pattern) | `Integration_OutboxMessage` table; polling publisher |
 | SG-3: Integration isolated from storefront | QAS-3 (Recoverability) | ADR-003 (OrderSyncAdapter extraction) | `src/Services/OrderSyncAdapter/` |
-| SG-2: Cross-channel stock visibility | QAS-4 (Consistency) | ADR-001 (RabbitMQ) | WireMock `GET /api/stock/{id}`; stale cache in OrderSyncAdapter |
+| SG-2: Cross-channel stock visibility | QAS-4 (Consistency) | ADR-001 (RabbitMQ) | `WmsStockSyncService` consumes `wms.stock.update` queue; `simulate-wms-restock.sh` simulates WMS push; `POST /api/wms/orders` syncs orders to WMS |
 | SG-3: Storefront available under ERP lag | QAS-5 (Availability) | ADR-001 (RabbitMQ async) | Async order path; checkout never calls ERP directly |
 
 ---

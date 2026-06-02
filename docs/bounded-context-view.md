@@ -41,7 +41,7 @@ graph TB
 
     subgraph EXT["External System Stubs: WireMock container"]
         ERP["ERP Stub\nPOST /api/orders\n→ 200 OK (normal)\n→ 503 (fault injected)"]
-        WMS["WMS Stub\nGET /api/stock/{id}\n→ 200 + stock (normal)\n→ 503 (fault injected)"]
+        WMS["WMS Stub\nPOST /api/wms/orders (order sync)\nGET /api/stock/{id} (stock query)\n→ 200 OK (normal)\n→ 503 (fault injected)"]
     end
 
     OUTPUB -->|"publishes event"| QUEUE
@@ -64,7 +64,8 @@ graph TB
 |---|---|---|---|
 | Commerce Core | Order Integration | Published Language: `order.placed` message schema is the explicit contract | RabbitMQ queue `order.placed` |
 | Order Integration | ERP (WireMock) | Conformist: we call ERP's API as-is, no anti-corruption layer | `POST /api/orders` |
-| Order Integration | WMS (WireMock) | Conformist + ACL: circuit breaker and stale cache protect the integration context from WMS instability | `GET /api/stock/{id}` |
+| Order Integration | WMS (WireMock) | Conformist + ACL: circuit breaker protects the integration context from WMS instability | `POST /api/wms/orders` |
+| WMS (external) | Commerce Core | Published Language: WMS pushes stock events via RabbitMQ; `WmsStockSyncService` consumes and applies deltas | RabbitMQ queue `wms.stock.update` |
 | Commerce Core | WMS (WireMock) | Read-only: nopCommerce queries stock for display only; writes flow through OrderSyncAdapter | `GET /api/stock/{id}` (via `wms-stock-query.json`) |
 
 ---
@@ -76,7 +77,8 @@ graph TB
 | Outbox location | Inside nopCommerce plugin | Inside nopCommerce plugin | None |
 | OrderSyncAdapter | Separate .NET Worker Service | Separate .NET Worker Service | None |
 | ERP integration | WireMock stub | WireMock stub | None |
-| WMS integration | WireMock stub (query) | WireMock stub (query + fault injection) | Extended: fault profiles added |
+| WMS integration (outbound) | WireMock stub (stock query) | WireMock stub (`POST /api/wms/orders` + `GET /api/stock/{id}` + fault injection) | Extended: order sync endpoint + fault profiles added |
+| WMS integration (inbound) | Not planned | `WmsStockSyncService` consuming `wms.stock.update` via RabbitMQ | Added by Carolina — implements QAS-4 |
 | Bounded context boundary | nopCommerce DB boundary enforced | `OrderSyncAdapter` has zero Nop.* references | As planned |
 
 The implementation matched the planned design. The only extension was adding fault profiles to the WireMock stubs, which was always part of the Part 2 scope.
