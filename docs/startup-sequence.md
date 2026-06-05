@@ -38,7 +38,7 @@ sequenceDiagram
     Operator->>NOP: cd src/Presentation/Nop.Web<br/>dotnet run --no-build
     NOP->>SQL: Open connection, run EF migrations<br/>ensure Integration_OutboxMessage table exists
     SQL-->>NOP: Schema ready
-    NOP-->>NOP: ASP.NET Core pipeline starts<br/>listens on :5050
+    NOP-->>NOP: ASP.NET Core pipeline starts<br/>listens on :5000
     NOP->>RMQ: OutboxPublisherService starts<br/>connects AMQP :5672
     RMQ-->>NOP: Connection accepted
     note right of NOP: OutboxPublisherService begins 2s poll loop<br/>WmsStockSyncService subscribes to stock.updated
